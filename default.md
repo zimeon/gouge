@@ -47,38 +47,3 @@ Station            13          0
 1.68522       1.55000          -
 1.56214       0.76000          -
 ```
-
-## Summary
-
-```
-Summary dimensions (outside):
-Length: 14'6.326" = 174.326"
-Beam: 28.2"(max) 25.9"(sheer)
-Center depth: 12.5"
-Bow height: 18.2"
-Stern height: 16.3"
-Displacements:
-  2.0" at 87.3lbs total weight @ 79.5" (including boat)
-  2.5" at 126.9lbs total weight @ 80.1" (including boat)
-  3.0" at 170.0lbs total weight @ 80.5" (including boat)
-  3.5" at 215.7lbs total weight @ 80.8" (including boat)
-  4.0" at 263.4lbs total weight @ 81.1" (including boat)
-  4.5" at 312.9lbs total weight @ 81.4" (including boat)
-  5.0" at 363.6lbs total weight @ 81.6" (including boat)
-  5.5" at 415.1lbs total weight @ 81.8" (including boat)
-  6.0" at 467.3lbs total weight @ 81.9" (including boat)
-
-Summary dimensions (inside/form):
-Length: 14'4.130" = 172.130"
-Beam: 27.7"(max) 25.4"(sheer)
-Centre depth: 12.3"
-Bow height: 18.0"
-Stern height: 16.1"
-
-Construction dimensions:
-Gunwale length: 14'9.090"
-External circumference: 45.744"
-Hull outside area estimate: 51.5 sq ft
-Strip estimate (5/8" strips, 20% over): 989.7 ft
-CLC strip estimate (5/8" strips, 20% over): 996.8 ft
-```
