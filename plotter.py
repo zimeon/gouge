@@ -107,8 +107,6 @@ class Plotter(object):
         self.view = 'orthographic'
         self.station = 0
         self.selected = None
-        self.waterline_y = 4.1  # inches
-        self.show_waterline = True
         self.use_feet = True
         # Colors
         self.sheer_color = "firebrick"
@@ -246,11 +244,6 @@ class Plotter(object):
         ax.minorticks_on()
         ax.xaxis.set_major_formatter(FuncFormatter(format_feet_inches if self.use_feet else format_inches))
         ax.yaxis.set_major_formatter(FuncFormatter(format_inches))
-        # Waterline?
-        if (self.show_waterline):
-            (x1, x2) = self.gouge.min_max_length()
-            ax.plot([x1, x2], [self.waterline_y, self.waterline_y], '-', color="blue")
-            ax.text(x2, self.waterline_y + 0.1, 'WL %.1f"' % self.waterline_y)
         # Center of buoyancy
         drafts, displacements, cobs = self.gouge.displacement_table(1.0, 8.0, 0.5)
         ax.plot(cobs, drafts, '-', color="green")
@@ -305,11 +298,6 @@ class Plotter(object):
         ax.minorticks_on()
         ax.xaxis.set_major_formatter(FuncFormatter(format_inches))
         ax.yaxis.set_major_formatter(FuncFormatter(format_inches))
-        # Waterline?
-        if (self.show_waterline):
-            wl_x = self.gouge.max_width * 1.15
-            ax.plot([-wl_x, wl_x], [self.waterline_y, self.waterline_y], '-', color="blue")
-            ax.text(self.gouge.max_width * 1.05, self.waterline_y + 0.1, 'WL %.1f"' % self.waterline_y)
         # Selected point?
         if (self.selected is not None):
             ax.plot([self.selected.x], [self.selected.y], marker='x', markersize=10, color="red")
@@ -448,11 +436,6 @@ class Plotter(object):
         ax.grid(color='black', linewidth=1)
         ax.xaxis.set_major_formatter(FuncFormatter(format_inches))
         ax.yaxis.set_major_formatter(FuncFormatter(format_inches))
-        # Waterline?
-        if (self.show_waterline):
-            wl_x = self.gouge.max_width * 1.15
-            ax.plot([-wl_x, wl_x], [self.waterline_y, self.waterline_y], '-', color="blue")
-            ax.text(self.gouge.max_width * 1.05, self.waterline_y + 0.1, 'WL %.1f"' % self.waterline_y)
 
     def multi_sheet_ax_generator(self, pdf, xx, yy, mirror_x=False, add_form_lines=False):
         """Generator giving axes and Region() for multi-sheet plot to cover xx, yy.
