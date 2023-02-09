@@ -13,12 +13,12 @@ from fairing import FairCurve
 
 
 class Gouge(object):
-    """Class to digitally loft a canoe hull design."""
+    """Class to digitally loft a canoe gouge design."""
 
     def __init__(self, filename=None):
         """Initialize Gouge object, optionally read from filename."""
         self.title = "Gouge"
-        self.hull_thickness = 0.25   # add to forms
+        self.gouge_thickness = 0.25   # add to forms
         self.station_positions = {}  # index by station
         self.heights = {}            # heights for butt lines
         self.sheer_height = {}       # height of sheer line indexed by station
@@ -105,15 +105,15 @@ class Gouge(object):
 
     @property
     def upside_down(self):
-        """True if the hull model is upside-down (y at bottom > y at bow/stern)."""
+        """True if the gouge model is upside-down (y at bottom > y at bow/stern)."""
         return(self.profile_height[0] > self.profile_height[1])
 
     @property
     def bottom_height(self):
-        """Height of the bottom (lowest point) in the hull.
+        """Height of the bottom (lowest point) in the gouge.
 
         Assumed to be on centerline, in profile. Accounts for the possiblity
-        that the hull may be drawn upside down in the mode.
+        that the gouge may be drawn upside down in the mode.
         """
         compare = (lambda a, b: a < b) if self.upside_down else (lambda a, b: a > b)
         if (self._bottom_height is None):
@@ -125,7 +125,7 @@ class Gouge(object):
         return(self._bottom_height)
 
     def normalize(self):
-        """Normalize model: stern at x=0, hull bottom at y=0, bow x +ve, up y +ve."""
+        """Normalize model: stern at x=0, gouge bottom at y=0, bow x +ve, up y +ve."""
         bow_x = self.bow_profile[0][0]
         stern_x = self.stern_profile[0][0]
         scale = 1.0 if (bow_x > stern_x) else -1.0
@@ -140,7 +140,7 @@ class Gouge(object):
         self._reset_lazy_calcs()
 
     def read(self, filename):
-        """Read hull model data from filename."""
+        """Read gouge model data from filename."""
         with open(filename, 'r') as f:
             section = None
             in_data = False
@@ -288,7 +288,7 @@ class Gouge(object):
         return(fmt % x)
 
     def write(self, filename):
-        """Write hull model data to filename."""
+        """Write gouge model data to filename."""
         with open(filename, 'w') as fh:
             fh.write("# " + self.title + "\n\n")
             fh.write("Date: " + time.asctime(time.localtime()) + "\n")
@@ -529,7 +529,7 @@ class Gouge(object):
         return(ww, yy)
 
     def profile_curve(self, bow_to_mid=True, mid_to_stern=True, mid_index=False):
-        """Tuple of arrays for profile curve of hull bottom from bow to stern.
+        """Tuple of arrays for profile curve of gouge bottom from bow to stern.
 
         Optionally select bow_to_mid or mid_to_stern.
         """
@@ -670,7 +670,7 @@ class Gouge(object):
             return self.station_positions[self.mid_station]
 
     def outline_at_height(self, height):
-        """Return length, width coordinate pairs for hull section at height.
+        """Return length, width coordinate pairs for gouge section at height.
 
         Start from bow and go to stern, find breadth only for stations with length position
         in this range.
@@ -716,7 +716,7 @@ class Gouge(object):
         """
         if (height not in self._outline_at_height_fairers):
             xx, ww = self.outline_at_height(height)
-            # For the middle portion of the hull where height may be above the sheer
+            # For the middle portion of the gouge where height may be above the sheer
             # there will be None entries in ww, strip these (accepting funky curve)
             x2 = []
             w2 = []
@@ -730,7 +730,7 @@ class Gouge(object):
         return(self._outline_at_height_fairers[height])
 
     def area_at_height(self, height):
-        """Calculate hull plan areas and center length at given height."""
+        """Calculate gouge plan areas and center length at given height."""
         if (height < (self.bottom_height + 0.001)):
             area = 0.0
             center = self.station_positions[self.mid_station]
@@ -1011,31 +1011,31 @@ class Gouge(object):
         return(max_breadth * 2.0)
 
     def depth(self, station):
-        """Depth from sheer to centre hull bottom at station."""
+        """Depth from sheer to centre gouge bottom at station."""
         return(self.sheer_height[station] - self.profile_height[station])
 
     def sheer_length_extension_through_thickness(self):
-        """Sum of bow and stern extension lengths due to hull thickness.
+        """Sum of bow and stern extension lengths due to gouge thickness.
 
         We want these in order to be able to get boat length from the form
         length. Calculate based on scaling trianngle between centerline, end
-        of sheer and sheer width at closest station -- to sheer width + hull
+        of sheer and sheer width at closest station -- to sheer width + gouge
         thickness, extra length is thus extension.
         """
         # bow
         dy = self.sheer_breadth[self.bow_station]
         dx = abs(self.station_positions[self.bow_station] - self.bow_profile[0][0])
-        bow_extension = dx * ((dy + self.hull_thickness) / dy - 1.0)
+        bow_extension = dx * ((dy + self.gouge_thickness) / dy - 1.0)
         # stern
         dy = self.sheer_breadth[self.bow_station]
         dx = abs(self.station_positions[self.bow_station] - self.bow_profile[0][0])
-        stern_extension = dx * ((dy + self.hull_thickness) / dy - 1.0)
+        stern_extension = dx * ((dy + self.gouge_thickness) / dy - 1.0)
         logging.debug("sheer_length_extension_through_thickness: %.2f %.2f" %
                       (bow_extension, stern_extension))
         return(bow_extension + stern_extension)
 
     def circumference(self, station=None):
-        """Length around outside of hull at station (default is midpoint).
+        """Length around outside of gouge at station (default is midpoint).
 
         FIXME - just uses sum of linear interpolation.
         """
@@ -1053,7 +1053,7 @@ class Gouge(object):
             last_y = y
         return(l * 2.0)
 
-    def hull_outside_area(self):
+    def gouge_outside_area(self):
         """Gouge outside area estimate.
 
         Use trapezium rule based on circumferences at stations. Result
@@ -1079,20 +1079,20 @@ class Gouge(object):
 
     @property
     def outside_length(self):
-        """Model length plus extension through hull thickness."""
+        """Model length plus extension through gouge thickness."""
         return(self.length() + self.sheer_length_extension_through_thickness())
 
     @property
     def outside_max_beam(self):
-        """Model max beam plus two hull thicknesses."""
-        return((self.max_width + self.hull_thickness) * 2.0)
+        """Model max beam plus two gouge thicknesses."""
+        return((self.max_width + self.gouge_thickness) * 2.0)
 
     @property
     def outside_sheer_beam(self):
-        """Model sheer beam plus two hull thicknesses."""
-        return(self.beam_sheer() + self.hull_thickness * 2.0)
+        """Model sheer beam plus two gouge thicknesses."""
+        return(self.beam_sheer() + self.gouge_thickness * 2.0)
 
     @property
     def outside_center_depth(self):
-        """Model depth at mid station plus hull thickness."""
-        return(self.depth(self.mid_station) + self.hull_thickness)
+        """Model depth at mid station plus gouge thickness."""
+        return(self.depth(self.mid_station) + self.gouge_thickness)

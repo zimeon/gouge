@@ -1,4 +1,4 @@
-"""Canoe hull design plotter."""
+"""Gouge model plotter."""
 
 import datetime
 import numpy
@@ -95,15 +95,15 @@ class Region(object):
 
 
 class Plotter(object):
-    """Class to plot hull design."""
+    """Class to plot pictures of gouge model."""
 
-    def __init__(self, fig=None, hull=None):
+    def __init__(self, fig=None, gouge=None):
         """Initialize Plotter object."""
         if (fig is None):
             self.fig = plt.figure()
         else:
             self.fig = fig
-        self.hull = hull
+        self.gouge = gouge
         self.view = 'orthographic'
         self.station = 0
         self.selected = None
@@ -137,7 +137,7 @@ class Plotter(object):
         """Create the interactive matplotlib plot.
 
         reset - set True to reset viewport
-        recacl - set True to reset hull calculations (e.g. if internal settings
+        recacl - set True to reset gouge calculations (e.g. if internal settings
             have been altered)
         """
         if (not reset and self.ax_width_profile is not None):
@@ -148,11 +148,11 @@ class Plotter(object):
             self.ax_height_lim = self.ax_width_profile.get_ylim()
             logging.debug("Current lims = " + str(self.ax_width_lim) + ' ' + str(self.ax_height_lim))
         else:
-            min_l, max_l = self.hull.min_max_length()
+            min_l, max_l = self.gouge.min_max_length()
             self.ax_length_lim = [min_l - 6.0, max_l + 6.0]
             self.ax_width_lim = None
         if (recalc):
-            self.hull._reset_lazy_calcs()
+            self.gouge._reset_lazy_calcs()
         self.fig.clear()
         if (self.view == 'sections'):
             self.draw_sections()
@@ -165,9 +165,9 @@ class Plotter(object):
     def draw_orthographic(self):
         """Set up and orthographic set of plots."""
         logging.info('draw_orthograpic')
-        max_width = self.hull.max_width
-        (min_y, max_y) = self.hull.min_max_vertical()
-        (min_l, max_l) = self.hull.min_max_length()
+        max_width = self.gouge.max_width
+        (min_y, max_y) = self.gouge.min_max_vertical()
+        (min_l, max_l) = self.gouge.min_max_length()
         #
         # Construct 2x2 grid with plots organized in orthographic
         # projection
@@ -223,20 +223,20 @@ class Plotter(object):
             self.plot_station(self.station, self.ax_station)
 
     def plot_length_profile(self, ax):
-        """Plot length profile of hull l on atplotlib axes ax."""
+        """Plot length profile of gouge l on atplotlib axes ax."""
         # Sheer points
-        xx, yy, labels = self.hull.sheer_profile_curve()
+        xx, yy, labels = self.gouge.sheer_profile_curve()
         ax.plot(xx, yy, 'o', color=self.sheer_point_color)
         for j, label in enumerate(labels):
             ax.text(xx[j] - 1.0, yy[j] + 1.5, label)
         # Faired sheer
-        x2, y2 = self.hull.sheer_profile_fairer.curve()
+        x2, y2 = self.gouge.sheer_profile_fairer.curve()
         ax.plot(x2, y2, '-', color=self.sheer_color)
         # Profile (bottom) points
-        xx, yy = self.hull.profile_curve()
+        xx, yy = self.gouge.profile_curve()
         ax.plot(xx, yy, 'o', color=self.profile_point_color)
         # Faired profile
-        x2, y2 = self.hull.profile_fairer.curve()
+        x2, y2 = self.gouge.profile_fairer.curve()
         ax.plot(x2, y2, '-', color=self.profile_color)
         # Size and axes
         ax.set_aspect('equal', 'datalim')
@@ -248,53 +248,53 @@ class Plotter(object):
         ax.yaxis.set_major_formatter(FuncFormatter(format_inches))
         # Waterline?
         if (self.show_waterline):
-            (x1, x2) = self.hull.min_max_length()
+            (x1, x2) = self.gouge.min_max_length()
             ax.plot([x1, x2], [self.waterline_y, self.waterline_y], '-', color="blue")
             ax.text(x2, self.waterline_y + 0.1, 'WL %.1f"' % self.waterline_y)
         # Center of buoyancy
-        drafts, displacements, cobs = self.hull.displacement_table(1.0, 8.0, 0.5)
+        drafts, displacements, cobs = self.gouge.displacement_table(1.0, 8.0, 0.5)
         ax.plot(cobs, drafts, '-', color="green")
         ax.text(cobs[-1], drafts[-1] + 1.0, 'COB')
 
     def plot_width_profile(self, ax):
-        """Plot width profile of hull on matplotlib axes ax."""
+        """Plot width profile of gouge on matplotlib axes ax."""
         # Bow to mid station
-        for s in self.hull.bow_to_mid_stations():
+        for s in self.gouge.bow_to_mid_stations():
             # Defined widths as points, station labels above
-            xx, yy = self.hull.breadth_curve(s)
+            xx, yy = self.gouge.breadth_curve(s)
             ax.text(xx[-1] - 0.15, yy[-1] + 0.5, s)
             # Interpolated line
-            f = self.hull.breadth_fairer(s)
+            f = self.gouge.breadth_fairer(s)
             x2, y2 = f.curve(end=f.mid_index)
-            if (s == self.hull.mid_station):
+            if (s == self.gouge.mid_station):
                 ax.plot(xx, yy, 'o', color=self.mid_point_color)
                 ax.plot(x2, y2, '-', color=self.mid_color)
             else:
                 ax.plot(xx, yy, 'o')
                 ax.plot(x2, y2, '-')
         # Stern to mid station
-        for s in self.hull.stern_to_mid_stations():
+        for s in self.gouge.stern_to_mid_stations():
             # Defined widths as points, station labels above
-            xx, yy = self.hull.breadth_curve(s, flip_x=True)
+            xx, yy = self.gouge.breadth_curve(s, flip_x=True)
             ax.text(xx[-1] - 0.15, yy[-1] + 0.5, s)
             # Interpolated line
-            f = self.hull.breadth_fairer(s)
+            f = self.gouge.breadth_fairer(s)
             x2, y2 = f.curve(start=f.mid_index)
-            if (s == self.hull.mid_station):
+            if (s == self.gouge.mid_station):
                 ax.plot(xx, yy, 'o', color=self.mid_point_color)
                 ax.plot(x2, y2, '-', color=self.mid_color)
             else:
                 ax.plot(xx, yy, 'o')
                 ax.plot(x2, y2, '-')
         # Bow and stern (just lines)
-        xx, yy = self.hull.profile_curve()
+        xx, yy = self.gouge.profile_curve()
         xx = [0.0 for y in yy]  # Centerline has x=0 in end view!
         ax.plot(xx, yy, '-', color=self.profile_color)
         ax.plot(xx, yy, 'o', color=self.profile_point_color)
         # Sheer line
-        w3, y3 = self.hull.sheer_breadth_profile_curve(bow_to_mid=True)
+        w3, y3 = self.gouge.sheer_breadth_profile_curve(bow_to_mid=True)
         ax.plot(w3, y3, '-', color=self.sheer_color)
-        w4, y4 = self.hull.sheer_breadth_profile_curve(mid_to_stern=True, flip_x=True)
+        w4, y4 = self.gouge.sheer_breadth_profile_curve(mid_to_stern=True, flip_x=True)
         ax.plot(w4, y4, '-', color=self.sheer_color)
         # Size and axes
         ax.set_aspect('equal', 'datalim')
@@ -307,40 +307,40 @@ class Plotter(object):
         ax.yaxis.set_major_formatter(FuncFormatter(format_inches))
         # Waterline?
         if (self.show_waterline):
-            wl_x = self.hull.max_width * 1.15
+            wl_x = self.gouge.max_width * 1.15
             ax.plot([-wl_x, wl_x], [self.waterline_y, self.waterline_y], '-', color="blue")
-            ax.text(self.hull.max_width * 1.05, self.waterline_y + 0.1, 'WL %.1f"' % self.waterline_y)
+            ax.text(self.gouge.max_width * 1.05, self.waterline_y + 0.1, 'WL %.1f"' % self.waterline_y)
         # Selected point?
         if (self.selected is not None):
             ax.plot([self.selected.x], [self.selected.y], marker='x', markersize=10, color="red")
 
     def plot_plan_view(self, ax):
-        """Plot plan view of self.hull on matplotlib axes ax."""
+        """Plot plan view of self.gouge on matplotlib axes ax."""
         # Set of waterline curves at different depths (upper)
         for height in [0.25, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]:
             try:
-                xx, ww = self.hull.outline_at_height(height)
+                xx, ww = self.gouge.outline_at_height(height)
                 ax.plot(xx, ww, '-', color='#8CCDFF')
             except Exception as e:
                 logging.warn("Failed to plot waterline curve at height %.2f (%s) " %
                              (height, str(e)))
-        # And hull curves at regular heights (lower)
-        for w, height in self.hull.breadths[self.hull.mid_station]:
+        # And gouge curves at regular heights (lower)
+        for w, height in self.gouge.breadths[self.gouge.mid_station]:
             try:
-                xx, ww = self.hull.outline_at_height(height)
+                xx, ww = self.gouge.outline_at_height(height)
                 ww = [-w for w in ww]
                 ax.plot(xx, ww, '-', color='#8FB645')
             except Exception as e:
-                logging.warn("Failed to plot hull curves at height %.1f (%s)" %
+                logging.warn("Failed to plot gouge curves at height %.1f (%s)" %
                              (height, str(e)))
         # Sheer curves (last so on top)
-        xx, ww, labels = self.hull.sheer_breadth_plan_curve()
+        xx, ww, labels = self.gouge.sheer_breadth_plan_curve()
         ax.plot(xx, ww, 'o', color=self.sheer_point_color)
         ax.plot(xx, [-w for w in ww], 'o', color=self.sheer_point_color)
         for x, w, label in zip(xx, ww, labels):
             ax.text(x - 1.0, w + 1.5, label)
         # Fairer sheer
-        x2, w2 = self.hull.sheer_breadth_fairer.curve()
+        x2, w2 = self.gouge.sheer_breadth_fairer.curve()
         ax.plot(x2, w2, '-', color=self.sheer_color)
         ax.plot(x2, [-w for w in w2], '-', color=self.sheer_color)
         # Size and axes
@@ -362,9 +362,9 @@ class Plotter(object):
         closest = Point()
         next_closest = Point()
         # Bow to mid station
-        for s in self.hull.bow_to_mid_stations():
+        for s in self.gouge.bow_to_mid_stations():
             # Defined widths as points, station labels above
-            xx, yy = self.hull.breadth_curve(s)
+            xx, yy = self.gouge.breadth_curve(s)
             for x, y in zip(xx, yy):
                 d = mouse.distance(x, y)
                 if (d < closest.mouse_distance):
@@ -372,9 +372,9 @@ class Plotter(object):
                     next_closest = closest
                     closest = Point(x, y, station=s, mouse_distance=d)
         # Stern to mid station
-        for s in self.hull.stern_to_mid_stations():
+        for s in self.gouge.stern_to_mid_stations():
             # Defined widths as points, station labels above
-            xx, yy = self.hull.breadth_curve(s, flip_x=True)
+            xx, yy = self.gouge.breadth_curve(s, flip_x=True)
             for x, y in zip(xx, yy):
                 d = mouse.distance(x, y)
                 if (d < closest.mouse_distance):
@@ -397,41 +397,41 @@ class Plotter(object):
         w = self.selected.x
         y = self.selected.y
         s = self.selected.station
-        for j, wy in enumerate(self.hull.breadths[s]):
+        for j, wy in enumerate(self.gouge.breadths[s]):
             if (wy[0] == w and wy[1] == y):
                 self.selected.x += dx
-                self.hull.breadths[s][j] = [self.selected.x, y]
-                self.hull._reset_lazy_calcs()
+                self.gouge.breadths[s][j] = [self.selected.x, y]
+                self.gouge._reset_lazy_calcs()
                 return
             if (wy[0] == -w and wy[1] == y):
                 self.selected.x += dx
-                self.hull.breadths[s][j] = [-self.selected.x, y]
-                self.hull._reset_lazy_calcs()
+                self.gouge.breadths[s][j] = [-self.selected.x, y]
+                self.gouge._reset_lazy_calcs()
                 return
         # else sheer point?
-        if (w == self.hull.sheer_breadth[s] and y == self.hull.sheer_height[s]):
+        if (w == self.gouge.sheer_breadth[s] and y == self.gouge.sheer_height[s]):
                 self.selected.x += dx
                 self.selected.y += dy
-                self.hull.sheer_breadth[s] = self.selected.x
-                self.hull.sheer_height[s] = self.selected.y
-                self.hull._reset_lazy_calcs()
+                self.gouge.sheer_breadth[s] = self.selected.x
+                self.gouge.sheer_height[s] = self.selected.y
+                self.gouge._reset_lazy_calcs()
                 return
-        if (w == -self.hull.sheer_breadth[s] and y == self.hull.sheer_height[s]):
+        if (w == -self.gouge.sheer_breadth[s] and y == self.gouge.sheer_height[s]):
                 self.selected.x += dx
                 self.selected.y += dy
-                self.hull.sheer_breadth[s] = -self.selected.x
-                self.hull.sheer_height[s] = self.selected.y
-                self.hull._reset_lazy_calcs()
+                self.gouge.sheer_breadth[s] = -self.selected.x
+                self.gouge.sheer_height[s] = self.selected.y
+                self.gouge._reset_lazy_calcs()
                 return
         logging.warn("Failed to match point in move_point_width_profile")
 
     def plot_station(self, station, ax, region=None):
-        """Plot one station of hull on matplotlib axes ax.
+        """Plot one station of gouge on matplotlib axes ax.
 
         This plot is designed for printing so fit onto some mutliple of
         9 by 15 sheets.
         """
-        xx, yy = self.hull.breadth_curve(station)
+        xx, yy = self.gouge.breadth_curve(station)
         # What are x & y limits at this station if not given
         if (region is None):
             region = Region(xx, yy, mirror_x=True)
@@ -440,7 +440,7 @@ class Plotter(object):
         # Defined widths as points, station label inside right sheer
         ax.text(xx[-1] - 2.0, yy[-1] - 1.0, "Station %d" % station)
         # Interpolated line
-        x2, y2 = self.hull.breadth_fairer(station).curve()
+        x2, y2 = self.gouge.breadth_fairer(station).curve()
         ax.plot(xx, yy, 'x', color="red")
         ax.plot([-x for x in xx], yy, 'x', color="red")
         ax.plot(x2, y2, '-', color="black")
@@ -450,9 +450,9 @@ class Plotter(object):
         ax.yaxis.set_major_formatter(FuncFormatter(format_inches))
         # Waterline?
         if (self.show_waterline):
-            wl_x = self.hull.max_width * 1.15
+            wl_x = self.gouge.max_width * 1.15
             ax.plot([-wl_x, wl_x], [self.waterline_y, self.waterline_y], '-', color="blue")
-            ax.text(self.hull.max_width * 1.05, self.waterline_y + 0.1, 'WL %.1f"' % self.waterline_y)
+            ax.text(self.gouge.max_width * 1.05, self.waterline_y + 0.1, 'WL %.1f"' % self.waterline_y)
 
     def multi_sheet_ax_generator(self, pdf, xx, yy, mirror_x=False, add_form_lines=False):
         """Generator giving axes and Region() for multi-sheet plot to cover xx, yy.
@@ -497,29 +497,29 @@ class Plotter(object):
         logging.warn("Writing plans to %s" % (plansfile))
         with PdfPages(plansfile) as pdf:
             # Station sections (complete from side to side)
-            for station in self.hull.stations:
-                xx, yy = self.hull.breadth_curve(station)
-                first_or_last = (station == min(self.hull.stations) or station == max(self.hull.stations))
+            for station in self.gouge.stations:
+                xx, yy = self.gouge.breadth_curve(station)
+                first_or_last = (station == min(self.gouge.stations) or station == max(self.gouge.stations))
                 for ax, sheet_region in self.multi_sheet_ax_generator(pdf, xx, yy, mirror_x=True, add_form_lines=first_or_last):
                     self.plot_station(station, ax, sheet_region)
                     plt.title("Station %d, sheet %s" % (station, str(sheet_region)))
             # Profile curve
-            xp, yp = self.hull.profile_fairer.curve()
-            xsp, ysp = self.hull.sheer_profile_fairer.curve()
+            xp, yp = self.gouge.profile_fairer.curve()
+            xsp, ysp = self.gouge.sheer_profile_fairer.curve()
             # Bow profile
-            br = min(self.hull.station_positions) + 1
-            brl = self.hull.station_positions[br]
-            brl2 = self.hull.station_positions[br - 1] - brl
+            br = min(self.gouge.station_positions) + 1
+            brl = self.gouge.station_positions[br]
+            brl2 = self.gouge.station_positions[br - 1] - brl
             xx = []
             yy = []
-            for x, y in self.hull.bow_profile:
+            for x, y in self.gouge.bow_profile:
                 xx.append(x - brl)
                 yy.append(y)
             # and kheel line at station br - 1 and br
             xx.append(0.0)
-            yy.append(self.hull.profile_height[br])
+            yy.append(self.gouge.profile_height[br])
             xx.append(0.0)
-            yy.append(self.hull.profile_height[br])
+            yy.append(self.gouge.profile_height[br])
             xb = [x - brl for x in xp]
             xsb = [x - brl for x in xsp]
             for ax, sheet_region in self.multi_sheet_ax_generator(pdf, xx, yy, add_form_lines=True):
@@ -532,17 +532,17 @@ class Plotter(object):
                 ax.plot([brl2 - dx, brl2 - dx], [-100.0, 100.0], '-', color="red")
                 plt.title("Bow profile relative to station %d, sheet %s" % (br, str(sheet_region)))
             # Stern profile
-            sr = max(self.hull.station_positions) - 1
-            srl = self.hull.station_positions[sr]
-            srl2 = srl - self.hull.station_positions[sr + 1]
+            sr = max(self.gouge.station_positions) - 1
+            srl = self.gouge.station_positions[sr]
+            srl2 = srl - self.gouge.station_positions[sr + 1]
             xx = []
             yy = []
-            for x, y in self.hull.stern_profile:
+            for x, y in self.gouge.stern_profile:
                 xx.append(srl - x)
                 yy.append(y)
             # and kheel line at station sr
             xx.append(0.0)
-            yy.append(self.hull.profile_height[sr])
+            yy.append(self.gouge.profile_height[sr])
             xs = [srl - x for x in xp]
             xss = [srl - x for x in xsp]
             for ax, sheet_region in self.multi_sheet_ax_generator(pdf, xx, yy, add_form_lines=True):
