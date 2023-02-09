@@ -117,7 +117,7 @@ class Plotter(object):
         self.mid_point_color = "grey"
         # Views we know about, will be an Axes object if we want to plot them
         self.ax_length_profile = None
-        self.ax_width_profile = None
+        self.ax_end_view = None
         self.ax_plan_view = None
         # Limits for length, width, height
         self.ax_length_lim = None
@@ -138,12 +138,12 @@ class Plotter(object):
         recacl - set True to reset gouge calculations (e.g. if internal settings
             have been altered)
         """
-        if (not reset and self.ax_width_profile is not None):
+        if (not reset and self.ax_end_view is not None):
             # https://github.com/openPMD/openPMD-viewer/issues/140
             # though should probably really do image update
             # https://stackoverflow.com/questions/9904849/preserve-zoom-settings-in-interactive-navigation-of-matplotlib-figure
-            self.ax_width_lim = self.ax_width_profile.get_xlim()
-            self.ax_height_lim = self.ax_width_profile.get_ylim()
+            self.ax_width_lim = self.ax_end_view.get_xlim()
+            self.ax_height_lim = self.ax_end_view.get_ylim()
             logging.debug("Current lims = " + str(self.ax_width_lim) + ' ' + str(self.ax_height_lim))
         else:
             min_l, max_l = self.gouge.min_max_length()
@@ -180,7 +180,7 @@ class Plotter(object):
                                width_ratios=[plt_l, plt_w],
                                height_ratios=[plt_h, plt_w])
         self.ax_length_profile = self.fig.add_subplot(gs[0])
-        self.ax_width_profile = self.fig.add_subplot(gs[1])
+        self.ax_end_view = self.fig.add_subplot(gs[1])
         self.ax_plan_view = self.fig.add_subplot(gs[2])
         self.ax_station = None
         self.plot_data()
@@ -191,7 +191,7 @@ class Plotter(object):
         """Set up just end-view of sections."""
         logging.warn("Drawing sections")
         self.ax_length_profile = None
-        self.ax_width_profile = self.fig.add_subplot(111)
+        self.ax_end_view = self.fig.add_subplot(111)
         self.ax_plan_view = None
         self.ax_station = None
         self.plot_data()
@@ -200,7 +200,7 @@ class Plotter(object):
         """Set up just end-view of sections."""
         logging.warn("Drawing sections")
         self.ax_length_profile = None
-        self.ax_width_profile = None
+        self.ax_end_view = None
         self.ax_plan_view = None
         self.ax_station = self.fig.add_subplot(111)
         self.plot_data()
@@ -210,9 +210,9 @@ class Plotter(object):
         if (self.ax_length_profile is not None):
             self.ax_length_profile.clear()
             self.plot_length_profile(self.ax_length_profile)
-        if (self.ax_width_profile is not None):
-            self.ax_width_profile.clear()
-            self.plot_width_profile(self.ax_width_profile)
+        if (self.ax_end_view is not None):
+            self.ax_end_view.clear()
+            self.plot_end_view(self.ax_end_view)
         if (self.ax_plan_view is not None):
             self.ax_plan_view.clear()
             self.plot_plan_view(self.ax_plan_view)
@@ -221,74 +221,41 @@ class Plotter(object):
             self.plot_station(self.station, self.ax_station)
 
     def plot_length_profile(self, ax):
-        """Plot length profile of gouge l on atplotlib axes ax."""
-        # Sheer points
-        xx, yy, labels = self.gouge.sheer_profile_curve()
-        ax.plot(xx, yy, 'o', color=self.sheer_point_color)
-        for j, label in enumerate(labels):
-            ax.text(xx[j] - 1.0, yy[j] + 1.5, label)
-        # Faired sheer
-        x2, y2 = self.gouge.sheer_profile_fairer.curve()
-        ax.plot(x2, y2, '-', color=self.sheer_color)
-        # Profile (bottom) points
-        xx, yy = self.gouge.profile_curve()
-        ax.plot(xx, yy, 'o', color=self.profile_point_color)
-        # Faired profile
-        x2, y2 = self.gouge.profile_fairer.curve()
-        ax.plot(x2, y2, '-', color=self.profile_color)
+        """Plot length profile of gouge on atplotlib axes ax."""
+
         # Size and axes
         ax.set_aspect('equal', 'datalim')
         if (self.ax_length_lim is not None):
             ax.set_xlim(self.ax_length_lim)
-        ax.xaxis.set_major_locator(MultipleLocator(12.0 if self.use_feet else 2.0))
+        ax.xaxis.set_major_locator(MultipleLocator(1.0))
         ax.minorticks_on()
-        ax.xaxis.set_major_formatter(FuncFormatter(format_feet_inches if self.use_feet else format_inches))
+        ax.xaxis.set_major_formatter(FuncFormatter(format_inches))
         ax.yaxis.set_major_formatter(FuncFormatter(format_inches))
-        # Center of buoyancy
-        drafts, displacements, cobs = self.gouge.displacement_table(1.0, 8.0, 0.5)
-        ax.plot(cobs, drafts, '-', color="green")
-        ax.text(cobs[-1], drafts[-1] + 1.0, 'COB')
 
-    def plot_width_profile(self, ax):
-        """Plot width profile of gouge on matplotlib axes ax."""
-        # Bow to mid station
-        for s in self.gouge.bow_to_mid_stations():
-            # Defined widths as points, station labels above
-            xx, yy = self.gouge.breadth_curve(s)
-            ax.text(xx[-1] - 0.15, yy[-1] + 0.5, s)
-            # Interpolated line
-            f = self.gouge.breadth_fairer(s)
-            x2, y2 = f.curve(end=f.mid_index)
-            if (s == self.gouge.mid_station):
-                ax.plot(xx, yy, 'o', color=self.mid_point_color)
-                ax.plot(x2, y2, '-', color=self.mid_color)
-            else:
-                ax.plot(xx, yy, 'o')
-                ax.plot(x2, y2, '-')
-        # Stern to mid station
-        for s in self.gouge.stern_to_mid_stations():
-            # Defined widths as points, station labels above
-            xx, yy = self.gouge.breadth_curve(s, flip_x=True)
-            ax.text(xx[-1] - 0.15, yy[-1] + 0.5, s)
-            # Interpolated line
-            f = self.gouge.breadth_fairer(s)
-            x2, y2 = f.curve(start=f.mid_index)
-            if (s == self.gouge.mid_station):
-                ax.plot(xx, yy, 'o', color=self.mid_point_color)
-                ax.plot(x2, y2, '-', color=self.mid_color)
-            else:
-                ax.plot(xx, yy, 'o')
-                ax.plot(x2, y2, '-')
-        # Bow and stern (just lines)
-        xx, yy = self.gouge.profile_curve()
-        xx = [0.0 for y in yy]  # Centerline has x=0 in end view!
-        ax.plot(xx, yy, '-', color=self.profile_color)
-        ax.plot(xx, yy, 'o', color=self.profile_point_color)
-        # Sheer line
-        w3, y3 = self.gouge.sheer_breadth_profile_curve(bow_to_mid=True)
-        ax.plot(w3, y3, '-', color=self.sheer_color)
-        w4, y4 = self.gouge.sheer_breadth_profile_curve(mid_to_stern=True, flip_x=True)
-        ax.plot(w4, y4, '-', color=self.sheer_color)
+    def plot_end_view(self, ax):
+        """Plot end view gouge on matplotlib axes ax."""
+        # Bar
+        bx = []
+        by = []
+        r = self.gouge.bar_diameter / 2.0
+        for angle in numpy.arange(0.0, 360.0, 5.0):
+            ar = angle / 180.0 * 3.141529
+            #logging.warn("Angle %f" % ar)
+            x = math.cos(ar) * r
+            y = math.sin(ar) * r
+            bx.append(x)
+            by.append(y)
+        ax.plot(bx, by, 'o', color=self.mid_point_color)
+
+        fx = []
+        fy = []
+        for f in numpy.arange(-1.0, +1.1, 0.1):
+            x = f * r
+            y = f*f * r
+            fx.append(x)
+            fy.append(y)
+        ax.plot(fx, fy, '-', color=self.mid_point_color)
+
         # Size and axes
         ax.set_aspect('equal', 'datalim')
         if (self.ax_width_lim is not None):
@@ -304,40 +271,14 @@ class Plotter(object):
 
     def plot_plan_view(self, ax):
         """Plot plan view of self.gouge on matplotlib axes ax."""
-        # Set of waterline curves at different depths (upper)
-        for height in [0.25, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]:
-            try:
-                xx, ww = self.gouge.outline_at_height(height)
-                ax.plot(xx, ww, '-', color='#8CCDFF')
-            except Exception as e:
-                logging.warn("Failed to plot waterline curve at height %.2f (%s) " %
-                             (height, str(e)))
-        # And gouge curves at regular heights (lower)
-        for w, height in self.gouge.breadths[self.gouge.mid_station]:
-            try:
-                xx, ww = self.gouge.outline_at_height(height)
-                ww = [-w for w in ww]
-                ax.plot(xx, ww, '-', color='#8FB645')
-            except Exception as e:
-                logging.warn("Failed to plot gouge curves at height %.1f (%s)" %
-                             (height, str(e)))
-        # Sheer curves (last so on top)
-        xx, ww, labels = self.gouge.sheer_breadth_plan_curve()
-        ax.plot(xx, ww, 'o', color=self.sheer_point_color)
-        ax.plot(xx, [-w for w in ww], 'o', color=self.sheer_point_color)
-        for x, w, label in zip(xx, ww, labels):
-            ax.text(x - 1.0, w + 1.5, label)
-        # Fairer sheer
-        x2, w2 = self.gouge.sheer_breadth_fairer.curve()
-        ax.plot(x2, w2, '-', color=self.sheer_color)
-        ax.plot(x2, [-w for w in w2], '-', color=self.sheer_color)
+
         # Size and axes
         ax.set_aspect('equal', 'datalim')
         if (self.ax_length_lim is not None):
             ax.set_xlim(self.ax_length_lim)
-        ax.xaxis.set_major_locator(MultipleLocator(12.0 if self.use_feet else 2.0))
+        ax.xaxis.set_major_locator(MultipleLocator(1.0))
         ax.minorticks_on()
-        ax.xaxis.set_major_formatter(FuncFormatter(format_feet_inches if self.use_feet else format_inches))
+        ax.xaxis.set_major_formatter(FuncFormatter(format_inches))
         ax.yaxis.set_major_formatter(FuncFormatter(format_inches))
 
     def select_point_width_profile(self, w, y, ratio=1.5):

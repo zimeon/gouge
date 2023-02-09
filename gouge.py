@@ -16,9 +16,13 @@ class Gouge(object):
     """Class to digitally loft a canoe gouge design."""
 
     def __init__(self, filename=None):
-        """Initialize Gouge object, optionally read from filename."""
+        """Initialize Gouge object, optionally read from filename.
+
+        Sadly, all measurements are in inches because that is the
+        way the industry works
+        """
         self.title = "Gouge"
-        self.gouge_thickness = 0.25   # add to forms
+        self.bar_diameter = 0.5
         self.station_positions = {}  # index by station
         self.heights = {}            # heights for butt lines
         self.sheer_height = {}       # height of sheer line indexed by station
@@ -1025,11 +1029,11 @@ class Gouge(object):
         # bow
         dy = self.sheer_breadth[self.bow_station]
         dx = abs(self.station_positions[self.bow_station] - self.bow_profile[0][0])
-        bow_extension = dx * ((dy + self.gouge_thickness) / dy - 1.0)
+        bow_extension = dx * ((dy) / dy - 1.0)
         # stern
         dy = self.sheer_breadth[self.bow_station]
         dx = abs(self.station_positions[self.bow_station] - self.bow_profile[0][0])
-        stern_extension = dx * ((dy + self.gouge_thickness) / dy - 1.0)
+        stern_extension = dx * ((dy) / dy - 1.0)
         logging.debug("sheer_length_extension_through_thickness: %.2f %.2f" %
                       (bow_extension, stern_extension))
         return(bow_extension + stern_extension)
@@ -1085,14 +1089,14 @@ class Gouge(object):
     @property
     def outside_max_beam(self):
         """Model max beam plus two gouge thicknesses."""
-        return((self.max_width + self.gouge_thickness) * 2.0)
+        return(self.max_width * 2.0)
 
     @property
     def outside_sheer_beam(self):
         """Model sheer beam plus two gouge thicknesses."""
-        return(self.beam_sheer() + self.gouge_thickness * 2.0)
+        return(self.beam_sheer())
 
     @property
     def outside_center_depth(self):
         """Model depth at mid station plus gouge thickness."""
-        return(self.depth(self.mid_station) + self.gouge_thickness)
+        return(self.depth(self.mid_station))
