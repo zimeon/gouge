@@ -152,11 +152,9 @@ class Gouge(object):
         """Curve of bar end."""
         bx, by, bz = [], [], []
         r = self.bar_radius
-        for angle in numpy.arange(0.0, 365.0, 5.0):
-            ar = angle / 180.0 * 3.141529
-            #logging.warn("Angle %f" % ar)
-            x = math.cos(ar) * r
-            y = math.sin(ar) * r
+        for ang in numpy.linspace(self.bar_channel_angle, 2 * math.pi - self.bar_channel_angle, 100):
+            x = math.sin(ang) * r
+            y = math.cos(ang) * r
             bx.append(x)
             by.append(y)
             bz.append(0)
