@@ -117,46 +117,12 @@ class Plotter(object):
 
     def plot_end_view(self, ax):
         """Plot end view gouge on matplotlib axes ax."""
-        # Bar
-        bx = []
-        by = []
-        r = self.gouge.bar_diameter / 2.0
-        for angle in numpy.arange(0.0, 365.0, 5.0):
-            ar = angle / 180.0 * 3.141529
-            #logging.warn("Angle %f" % ar)
-            x = math.cos(ar) * r
-            y = math.sin(ar) * r
-            bx.append(x)
-            by.append(y)
+        bx, by, bz = self.gouge.bar_end_curve()
         ax.plot(bx, by, '-', color=self.mid_point_color)
 
-        fx = []
-        fy = []
-        last_x = 0.0
-        last_y = 0.0
-        for f in numpy.arange(0.0, +1.1, 0.1):
-            x = f * r
-            y = f*f * r
-            # Have we gone outside bar?
-            if (x*x + y*y) >= r*r:
-                # Calculate intercept for line from last_x, last_y
-                # to x, y with the circle of diameter r
-                #
-                # xx = m * (x-last_x) + last_x
-                # yy = m * (y-last_x) _ last_y
-                # xx*xx + yy*yy = r*r
-                # => yy = sqrt(xx*xx - r*r)
-                pass
-            fx.append(x)
-            fy.append(y)
-            fx.insert(0, -x)
-            fy.insert(0, y)
-            if (x*x + y*y) > r*r:
-                break
-            last_x = x
-            last_y = y
-        ax.plot(fx, fy, '-', color=self.mid_point_color)
-        ax.plot(fx, fy, 'o', color=self.mid_point_color)
+        cx, cy, cz = self.gouge.cutting_edge_curve()
+        ax.plot(cx, cy, '-', color=self.mid_point_color)
+        ax.plot(cx, cy, 'o', color=self.mid_point_color)
 
         # Size and axes
         ax.set_aspect('equal', 'datalim')

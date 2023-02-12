@@ -22,7 +22,9 @@ class Gouge(object):
         way the industry works
         """
         self.title = "Gouge"
-        self.bar_diameter = 0.5
+        self.bar_diameter = 0.5      # bar diameter in inches
+        self.bar_channel_angle = 1   # angle from vertical to top of channel
+        self.channel = [], []        # channel curve from middle bottom to bar endge
         self.station_positions = {}  # index by station
         self.heights = {}            # heights for butt lines
         self.sheer_height = {}       # height of sheer line indexed by station
@@ -55,10 +57,45 @@ class Gouge(object):
         self._sheer_breadth_fairer = None
 
     def set_channel_parabola(self):
-        pass
+        """Set self.channel to be a parabola."""
+        cx, cy = [], []
+        r = self.bar_radius
+        last_x = 0.0
+        last_y = 0.0
+        for f in numpy.arange(0.0, +1.1, 0.1):
+            x = f * r
+            y = f*f * r
+            # Have we gone outside bar?
+            if (x * x + y * y) >= r * r:
+                # Calculate intercept for line from last_x, last_y
+                # to x, y with the circle of diameter r
+                for m in numpy.arange(0.0, 1.0, 0.01):
+                    xx = m * (x - last_x) + last_x
+                    yy = m * (y - last_y) + last_y
+                    if (xx * xx + yy * yy) >= r * r:
+                        break
+                # Now calculate angle of intercept with bar
+                self.bar_channel_angle = math.atan2(xx, yy)
+                break
+            # Still inside bar diameter
+            cx.append(x)
+            cy.append(y)
+            last_x = x
+            last_y = y
+        # Now have angle, add last point exactly on bar edge
+        x = r * math.sin(self.bar_channel_angle)
+        y = r * math.cos(self.bar_channel_angle)
+        cx.append(x)
+        cy.append(y)
+        self.channel = cx, cy
 
     def set_profile_flat(self):
         pass
+
+    @property
+    def bar_radius(self):
+        """Bar radius."""
+        return self.bar_diameter / 2.0
 
     @property
     def stations(self):
@@ -110,6 +147,31 @@ class Gouge(object):
         """Solve model ready for plotting etc.."""
         pass
         self._reset_lazy_calcs()
+
+    def bar_end_curve(self):
+        """Curve of bar end."""
+        bx, by, bz = [], [], []
+        r = self.bar_radius
+        for angle in numpy.arange(0.0, 365.0, 5.0):
+            ar = angle / 180.0 * 3.141529
+            #logging.warn("Angle %f" % ar)
+            x = math.cos(ar) * r
+            y = math.sin(ar) * r
+            bx.append(x)
+            by.append(y)
+            bz.append(0)
+        return bx, by, bz
+
+    def cutting_edge_curve(self):
+        """Curve defining the cutting edge."""
+        cx, cy, cz = [], [], []
+        for j in range(len(self.channel[0]) - 1, 0, -1):
+            cx.append(-self.channel[0][j])
+            cy.append(self.channel[1][j])
+        for j in range(0, len(self.channel[0]), 1):
+            cx.append(self.channel[0][j])
+            cy.append(self.channel[1][j])
+        return cx, cy, cz
 
     def read(self, filename):
         """Read gouge model data from filename."""
