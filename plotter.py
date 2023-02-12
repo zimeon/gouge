@@ -158,22 +158,18 @@ class Plotter(object):
     def draw_orthographic(self):
         """Set up and orthographic set of plots."""
         logging.info('draw_orthograpic')
-        max_width = self.gouge.max_width
-        (min_y, max_y) = self.gouge.min_max_vertical()
-        (min_l, max_l) = self.gouge.min_max_length()
         #
         # Construct 2x2 grid with plots organized in orthographic
         # projection
         #
-        # [length profile]  [width profile]
+        # [length profile]  [end view]
         # [  plan view   ]
         #
-        plt_h = max_y - min_y
-        plt_l = max_l - min_l + 12.0
-        plt_w = max_width * 2.0 + 12.0
+        plt_h = self.gouge.bar_diameter * 1.5
+        plt_l = self.gouge.bar_diameter * 3.0
         gs = gridspec.GridSpec(2, 2,
                                width_ratios=[plt_l, plt_w],
-                               height_ratios=[plt_h, plt_w])
+                               height_ratios=[plt_w, plt_w])
         self.ax_length_profile = self.fig.add_subplot(gs[0])
         self.ax_end_view = self.fig.add_subplot(gs[1])
         self.ax_plan_view = self.fig.add_subplot(gs[2])
