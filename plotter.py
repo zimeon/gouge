@@ -44,14 +44,13 @@ class Plotter(object):
         self.view = 'orthographic'
         self.station = 0
         self.selected = None
-        self.use_feet = True
         # Colors
         self.profile_color = "navy"
         self.profile_point_color = "grey"
         self.mid_color = "darkgreen"
         self.mid_point_color = "grey"
         # Views we know about, will be an Axes object if we want to plot them
-        self.ax_length_profile = None
+        self.ax_profile_view = None
         self.ax_end_view = None
         self.ax_plan_view = None
 
@@ -83,7 +82,7 @@ class Plotter(object):
         gs = gridspec.GridSpec(2, 2,
                                width_ratios=[plt_l, plt_w],
                                height_ratios=[plt_w, plt_w])
-        self.ax_length_profile = self.fig.add_subplot(gs[0])
+        self.ax_profile_view = self.fig.add_subplot(gs[0])
         self.ax_end_view = self.fig.add_subplot(gs[1])
         self.ax_plan_view = self.fig.add_subplot(gs[2])
         self.plot_data()
@@ -92,9 +91,9 @@ class Plotter(object):
 
     def plot_data(self):
         """Plot/update all datasets for which axis is not None."""
-        if (self.ax_length_profile is not None):
-            self.ax_length_profile.clear()
-            self.plot_length_profile(self.ax_length_profile)
+        if (self.ax_profile_view is not None):
+            self.ax_profile_view.clear()
+            self.plot_profile_view(self.ax_profile_view)
         if (self.ax_end_view is not None):
             self.ax_end_view.clear()
             self.plot_end_view(self.ax_end_view)
@@ -102,7 +101,7 @@ class Plotter(object):
             self.ax_plan_view.clear()
             self.plot_plan_view(self.ax_plan_view)
 
-    def plot_length_profile(self, ax):
+    def plot_profile_view(self, ax):
         """Plot length profile of gouge on atplotlib axes ax."""
         br = self.gouge.bar_diameter / 2.0
         xx = [-3.0, 0, 0, -3.0]
@@ -122,23 +121,42 @@ class Plotter(object):
         bx = []
         by = []
         r = self.gouge.bar_diameter / 2.0
-        for angle in numpy.arange(0.0, 360.0, 5.0):
+        for angle in numpy.arange(0.0, 365.0, 5.0):
             ar = angle / 180.0 * 3.141529
             #logging.warn("Angle %f" % ar)
             x = math.cos(ar) * r
             y = math.sin(ar) * r
             bx.append(x)
             by.append(y)
-        ax.plot(bx, by, 'o', color=self.mid_point_color)
+        ax.plot(bx, by, '-', color=self.mid_point_color)
 
         fx = []
         fy = []
-        for f in numpy.arange(-1.0, +1.1, 0.1):
+        last_x = 0.0
+        last_y = 0.0
+        for f in numpy.arange(0.0, +1.1, 0.1):
             x = f * r
             y = f*f * r
+            # Have we gone outside bar?
+            if (x*x + y*y) >= r*r:
+                # Calculate intercept for line from last_x, last_y
+                # to x, y with the circle of diameter r
+                #
+                # xx = m * (x-last_x) + last_x
+                # yy = m * (y-last_x) _ last_y
+                # xx*xx + yy*yy = r*r
+                # => yy = sqrt(xx*xx - r*r)
+                pass
             fx.append(x)
             fy.append(y)
+            fx.insert(0, -x)
+            fy.insert(0, y)
+            if (x*x + y*y) > r*r:
+                break
+            last_x = x
+            last_y = y
         ax.plot(fx, fy, '-', color=self.mid_point_color)
+        ax.plot(fx, fy, 'o', color=self.mid_point_color)
 
         # Size and axes
         ax.set_aspect('equal', 'datalim')
@@ -151,6 +169,11 @@ class Plotter(object):
 
     def plot_plan_view(self, ax):
         """Plot plan view of self.gouge on matplotlib axes ax."""
+
+        br = self.gouge.bar_diameter / 2.0
+        xx = [-3.0, 0, 0, -3.0]
+        yy = [br, br, -br, -br]
+        ax.plot(xx, yy, '-', color=self.mid_point_color)
 
         # Size and axes
         #ax.set_aspect('equal', 'datalim'))

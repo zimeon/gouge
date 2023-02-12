@@ -54,25 +54,11 @@ class Gouge(object):
         self._sheer_profile_fairer = None
         self._sheer_breadth_fairer = None
 
-    def _set_bow_stern_stations(self):
-        # Lowest (by sort) station label is bow, highest is stern."""
-        s = sorted(self.station_positions.keys())
-        self._bow_station = s[0]
-        self._stern_station = s[-1]
-        self._set_max_width_and_station()
+    def set_channel_parabola(self):
+        pass
 
-    def _set_max_width_and_station(self):
-        # Widest point and station in all data
-        max_width = 0.001
-        station = None
-        for s in self.stations:
-            for x, y in self.breadths[s]:
-                if (x > max_width):
-                    max_width = x
-                    station = s
-        self._max_width = max_width
-        self._mid_station = station
-        logging.info("mid_station = %d" % station)
+    def set_profile_flat(self):
+        pass
 
     @property
     def stations(self):
@@ -82,29 +68,21 @@ class Gouge(object):
     @property
     def bow_station(self):
         """Station index of station closest to bow."""
-        if (self._bow_station is None):
-            self._set_bow_stern_stations()
         return(self._bow_station)
 
     @property
     def stern_station(self):
         """Station index of station closest to stern."""
-        if (self._stern_station is None):
-            self._set_bow_stern_stations()
         return(self._stern_station)
 
     @property
     def mid_station(self):
         """Station index of mid station (widest breadth)."""
-        if (self._mid_station is None):
-            self._set_max_width_and_station()
         return(self._mid_station)
 
     @property
     def max_width(self):
         """Maximum width, defines mid station."""
-        if (self._max_width is None):
-            self._set_max_width_and_station()
         return(self._max_width)
 
     @property
@@ -128,19 +106,9 @@ class Gouge(object):
             self._bottom_height = h
         return(self._bottom_height)
 
-    def normalize(self):
-        """Normalize model: stern at x=0, gouge bottom at y=0, bow x +ve, up y +ve."""
-        bow_x = self.bow_profile[0][0]
-        stern_x = self.stern_profile[0][0]
-        scale = 1.0 if (bow_x > stern_x) else -1.0
-        if (stern_x != 0.0 or scale != 1.0):
-            logging.info("normalize: adjusting x by %f, scaling by %f" % (-stern_x, scale))
-            self.offset_scale_length(-stern_x, scale)
-        bottom_y = self.bottom_height
-        scale = 1.0 if self.upside_down else -1.0
-        if (bottom_y != 0.0 or scale != 1.0):
-            logging.info("normalize: adjusting y by %f, scaling by %f" % (-bottom_y, scale))
-            self.offset_scale_vertical(-bottom_y, scale)
+    def solve(self):
+        """Solve model ready for plotting etc.."""
+        pass
         self._reset_lazy_calcs()
 
     def read(self, filename):
