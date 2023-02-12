@@ -138,17 +138,6 @@ class Plotter(object):
         recacl - set True to reset gouge calculations (e.g. if internal settings
             have been altered)
         """
-        if (not reset and self.ax_end_view is not None):
-            # https://github.com/openPMD/openPMD-viewer/issues/140
-            # though should probably really do image update
-            # https://stackoverflow.com/questions/9904849/preserve-zoom-settings-in-interactive-navigation-of-matplotlib-figure
-            self.ax_width_lim = self.ax_end_view.get_xlim()
-            self.ax_height_lim = self.ax_end_view.get_ylim()
-            logging.debug("Current lims = " + str(self.ax_width_lim) + ' ' + str(self.ax_height_lim))
-        else:
-            min_l, max_l = self.gouge.min_max_length()
-            self.ax_length_lim = [min_l - 6.0, max_l + 6.0]
-            self.ax_width_lim = None
         if (recalc):
             self.gouge._reset_lazy_calcs()
         self.fig.clear()
@@ -165,7 +154,7 @@ class Plotter(object):
         # [length profile]  [end view]
         # [  plan view   ]
         #
-        plt_h = self.gouge.bar_diameter * 1.5
+        plt_w = self.gouge.bar_diameter * 1.5
         plt_l = self.gouge.bar_diameter * 3.0
         gs = gridspec.GridSpec(2, 2,
                                width_ratios=[plt_l, plt_w],
@@ -173,7 +162,6 @@ class Plotter(object):
         self.ax_length_profile = self.fig.add_subplot(gs[0])
         self.ax_end_view = self.fig.add_subplot(gs[1])
         self.ax_plan_view = self.fig.add_subplot(gs[2])
-        self.ax_station = None
         self.plot_data()
         self.fig.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95,
                                  wspace=0.07, hspace=0.07)
@@ -189,15 +177,16 @@ class Plotter(object):
         if (self.ax_plan_view is not None):
             self.ax_plan_view.clear()
             self.plot_plan_view(self.ax_plan_view)
-        if (self.ax_station is not None):
-            self.ax_station.clear()
-            self.plot_station(self.station, self.ax_station)
 
     def plot_length_profile(self, ax):
         """Plot length profile of gouge on atplotlib axes ax."""
+        br = self.gouge.bar_diameter / 2.0
+        xx = [-3.0, 0, 0, -3.0]
+        yy = [br, br, -br, -br]
+        ax.plot(xx, yy, '-', color=self.mid_point_color)
 
         # Size and axes
-        ax.set_aspect('equal', 'datalim')
+        #ax.set_aspect('equal', 'datalim')
         if (self.ax_length_lim is not None):
             ax.set_xlim(self.ax_length_lim)
         ax.xaxis.set_major_locator(MultipleLocator(1.0))
@@ -246,7 +235,7 @@ class Plotter(object):
         """Plot plan view of self.gouge on matplotlib axes ax."""
 
         # Size and axes
-        ax.set_aspect('equal', 'datalim')
+        #ax.set_aspect('equal', 'datalim')
         if (self.ax_length_lim is not None):
             ax.set_xlim(self.ax_length_lim)
         ax.xaxis.set_major_locator(MultipleLocator(1.0))
