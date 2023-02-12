@@ -152,12 +152,7 @@ class Plotter(object):
         if (recalc):
             self.gouge._reset_lazy_calcs()
         self.fig.clear()
-        if (self.view == 'sections'):
-            self.draw_sections()
-        elif (self.view == 'station'):
-            self.draw_station()
-        else:  # default
-            self.draw_orthographic()
+        self.draw_orthographic()
         self.fig.canvas.draw()
 
     def draw_orthographic(self):
@@ -186,24 +181,6 @@ class Plotter(object):
         self.plot_data()
         self.fig.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95,
                                  wspace=0.07, hspace=0.07)
-
-    def draw_sections(self):
-        """Set up just end-view of sections."""
-        logging.warn("Drawing sections")
-        self.ax_length_profile = None
-        self.ax_end_view = self.fig.add_subplot(111)
-        self.ax_plan_view = None
-        self.ax_station = None
-        self.plot_data()
-
-    def draw_station(self):
-        """Set up just end-view of sections."""
-        logging.warn("Drawing sections")
-        self.ax_length_profile = None
-        self.ax_end_view = None
-        self.ax_plan_view = None
-        self.ax_station = self.fig.add_subplot(111)
-        self.plot_data()
 
     def plot_data(self):
         """Plot/update all datasets for which axis is not None."""
