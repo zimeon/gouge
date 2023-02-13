@@ -102,14 +102,21 @@ class Plotter(object):
             self.plot_plan_view(self.ax_plan_view)
 
     def plot_profile_view(self, ax):
-        """Plot length profile of gouge on atplotlib axes ax."""
-        br = self.gouge.bar_diameter / 2.0
-        xx = [-3.0, 0, 0, -3.0]
-        yy = [br, br, -br, -br]
-        ax.plot(xx, yy, '-', color=self.mid_point_color)
+        """Plot length profile of gouge on matplotlib axes ax.
 
+        Draws the profile along bar top, down cutting edge,
+        down ground edge, and then back along the bar.
+        """
+        zz = [-3.0]
+        yy = [self.gouge.bar_top_height]
+        cx, cy, cz = self.gouge.cutting_edge_curve(half=True)
+        zz.extend(cz)
+        yy.extend(cy)
+        zz.append(-3.0)
+        yy.append(-self.gouge.bar_radius)
+        ax.plot(zz, yy, '-', color=self.mid_point_color)
         # Size and axes
-        #ax.set_aspect('equal', 'datalim')
+        ax.set_aspect('equal', 'datalim')
         ax.xaxis.set_major_locator(MultipleLocator(1.0))
         ax.minorticks_on()
         ax.xaxis.set_major_formatter(FuncFormatter(format_inches))
@@ -134,15 +141,30 @@ class Plotter(object):
             ax.plot([self.selected.x], [self.selected.y], marker='x', markersize=10, color="red")
 
     def plot_plan_view(self, ax):
-        """Plot plan view of self.gouge on matplotlib axes ax."""
+        """Plot plan view of self.gouge on matplotlib axes ax.
 
-        br = self.gouge.bar_diameter / 2.0
-        xx = [-3.0, 0, 0, -3.0]
-        yy = [br, br, -br, -br]
-        ax.plot(xx, yy, '-', color=self.mid_point_color)
+        In model space this has -z horizontal and +x vertical.
+        """
+        # Top of channel and then curring edge
+        zz = [-3.0]
+        xx = [-self.gouge.bar_top_width]
+        cx, cy, cz = self.gouge.cutting_edge_curve()
+        zz.extend(cz)
+        xx.extend(cx)
+        zz.append(-3.0)
+        xx.append(self.gouge.bar_top_width)
+        ax.plot(zz, xx, '-', color=self.mid_point_color)
+
+        # Edge of bar and trailing edge (not all to be seen)
+        zz = [-3.0]
+        xx = [-self.gouge.bar_radius]
+        zz.extend([0.0, 0.0])  # FIXME - need curve
+        xx.extend([-self.gouge.bar_radius, -self.gouge.bar_radius / 2.0])
+        ax.plot(zz, xx, '-', color=self.mid_point_color)
+        ax.plot(zz, numpy.multiply(xx, numpy.full_like(xx, -1.0)), '-', color=self.mid_point_color)
 
         # Size and axes
-        #ax.set_aspect('equal', 'datalim'))
+        ax.set_aspect('equal', 'datalim')
         ax.xaxis.set_major_locator(MultipleLocator(1.0))
         ax.minorticks_on()
         ax.xaxis.set_major_formatter(FuncFormatter(format_inches))

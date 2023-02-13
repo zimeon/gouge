@@ -24,7 +24,11 @@ class Gouge(object):
         self.title = "Gouge"
         self.bar_diameter = 0.5      # bar diameter in inches
         self.bar_channel_angle = 1   # angle from vertical to top of channel
-        self.channel = [], []        # channel curve from middle bottom to bar endge
+        self.channel = [], []        # channel curve from middle bottom to bar edge
+        self.profile = [], []        # profile of cutting edge
+        # Grinding setup
+        self.wheel_diameter = 8.0    # inches
+        self.nose_angle = 50.0       # degrees
         # Data formatting
         self.units = 'inches'
         # Initialize stored values for lazy calculation
@@ -34,6 +38,16 @@ class Gouge(object):
     def bar_radius(self):
         """Bar radius."""
         return self.bar_diameter / 2.0
+
+    @property
+    def bar_top_height(self):
+        """Bar height at top of channel."""
+        return math.cos(self.bar_channel_angle) * self.bar_diameter / 2.0
+
+    @property
+    def bar_top_width(self):
+        """Width in bar at top of channel."""
+        return math.sin(self.bar_channel_angle) * self.bar_diameter / 2.0
 
     def _reset_lazy_calcs(self):
         # Initialize/reset values for lazy eval
@@ -72,8 +86,23 @@ class Gouge(object):
         cy.append(y)
         self.channel = cx, cy
 
-    def set_profile_flat(self):
-        pass
+    def set_profile_flat(self, angle=30.0):
+        """Set up flat wing profile at angle from centerline."""
+        # First find bottom of channel
+        ybot = self.channel[1][0]
+        logging.info("ybot = %f" % ybot)
+        # Find y value at end of wing (=channel top edge)
+        ytop = math.sin(self.bar_channel_angle) * self.bar_radius
+        dy = ytop - ybot
+        dz = dy / math.tan(math.radians(angle))
+        # Genetate 100 points aling this line
+        py, pz = [], []
+        for m in numpy.linspace(0, 1.0, 100):
+            y = m * dy + ybot
+            z = -m * dz
+            py.append(y)
+            pz.append(z)
+        self.profile = py, pz
 
     def solve(self):
         """Solve model ready for plotting etc.."""
@@ -81,7 +110,13 @@ class Gouge(object):
         self._reset_lazy_calcs()
 
     def bar_end_curve(self):
-        """Curve of bar end."""
+        """Curve of bar end.
+
+        This is the curve of the end of the outside of the bar,
+        the trailing edge of the ground area.
+
+        FIXME - no z info yet!
+        """
         bx, by, bz = [], [], []
         r = self.bar_radius
         for ang in numpy.linspace(self.bar_channel_angle, 2 * math.pi - self.bar_channel_angle, 100):
@@ -92,13 +127,26 @@ class Gouge(object):
             bz.append(0)
         return bx, by, bz
 
-    def cutting_edge_curve(self):
-        """Curve defining the cutting edge."""
+    def cutting_edge_curve(self, half=False):
+        """Curve defining the cutting edge.
+
+        This is the curve of the cutting edge. Looking in
+        x,y (end view) it follows the channel. Looking in
+        z,y (profile view) it follows the grind profile.
+
+        If half is set True then will just return the curve
+        from the top left wing (looking end on, +y, -x) down
+        to the center of the channel.
+        """
         cx, cy, cz = [], [], []
         for j in range(len(self.channel[0]) - 1, 0, -1):
             cx.append(-self.channel[0][j])
             cy.append(self.channel[1][j])
+            cz.append(numpy.interp(self.channel[1][j], self.profile[0], self.profile[1]))
         for j in range(0, len(self.channel[0]), 1):
             cx.append(self.channel[0][j])
             cy.append(self.channel[1][j])
+            cz.append(numpy.interp(self.channel[1][j], self.profile[0], self.profile[1]))
+            if half:
+                break  # Stop after bottom middle point
         return cx, cy, cz
