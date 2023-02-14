@@ -54,20 +54,15 @@ class Gouge(object):
         cx, cy = [], []
         r = self.bar_radius
         last_x, last_y = 0.0, 0.0
+        xx, yy = 0.0, 0.0
         for f in numpy.arange(0.0, +1.1, 0.1):
             x = f * r
             y = f*f * r - 0.1 * self.bar_diameter
             # Have we gone outside bar?
             if (x * x + y * y) >= r * r:
-                # Calculate intercept for line from last_x, last_y
-                # to x, y with the circle of diameter r
-                for m in numpy.arange(0.0, 1.0, 0.01):
-                    xx = m * (x - last_x) + last_x
-                    yy = m * (y - last_y) + last_y
-                    if (xx * xx + yy * yy) >= r * r:
-                        break
-                # Now calculate angle of intercept with bar
-                self.bar_channel_angle = math.atan2(xx, yy)
+                xx, yy, zz = self.bar_intercept(
+                                 last_x, last_y, 0.0,
+                                 x, y, 0.0)
                 break
             # Still inside bar diameter
             cx.append(x)
@@ -75,6 +70,7 @@ class Gouge(object):
             last_x = x
             last_y = y
         # Now have angle, add last point exactly on bar edge
+        self.bar_channel_angle = math.atan2(xx, yy)
         x = r * math.sin(self.bar_channel_angle)
         y = r * math.cos(self.bar_channel_angle)
         cx.append(x)
@@ -145,23 +141,30 @@ class Gouge(object):
                 break  # Stop after bottom middle point
         return cx, cy, cz
 
-    def grinding_curve(self):
-        """Calculate grining wheel curve from cutting edge to bar edge."""
-        # Grinding wheel center in gouge coords
-        nz = 0
-        ny = self.channel[1][0]
+    def grinding_curve(self, ex, ey, ez):
+        """Calculate grining wheel curve from cutting edge to bar edge.
+
+        Starting point on cutting edge is (ex, ey, ez).
+        """
         # Calculate z and y distances (+ve) of wheel center from origin
+        wcx = 0.0
+        wcy = math.cos(self.nose_angle) * self.wheel_diameter - ey
         wcz = math.sin(self.nose_angle) * self.wheel_diameter
-        wcy = math.cos(self.nose_angle) * self.wheel_diameter - ny
+        return self.grinding_curve_from_point(ex, ey, ez,
+                                              wcx, wcy, wcz)
+
+    def grinding_curve_from_point(self,
+                                  ex, ey, ez,
+                                  wcx, wcy, wcz):
         max_angle_change = self.bar_diameter / self.wheel_diameter
-        gx, gy, gz = [], [ny], [nz]
+        gx, gy, gz = [ex], [ey], [ez]
         r = self.bar_radius
-        last_x, last_y, last_z = 0.0, 0.0, 0.0
+        last_x, last_y, last_z = ex, ey, ez
         xx, yy, zz = 0.0, 0.0, 0.0
         for a in numpy.arange(self.nose_angle, self.nose_angle + max_angle_change, max_angle_change / 20.0):
-            x = 0.0
+            x = ex
             y = math.cos(a) * self.wheel_diameter - wcy
-            z = wcz - math.sin(a) * self.wheel_diameter
+            z = ez + wcz - math.sin(a) * self.wheel_diameter
             # Have we gone outside bar?
             if (x * x + y * y) >= r * r:
                 xx, yy, zz = self.bar_intercept(
@@ -196,9 +199,9 @@ class Gouge(object):
         """
         rsqrd = self.bar_radius * self.bar_radius
         for m in numpy.arange(0.0, 1.0, 0.01):
-            xx = m * (x2 - x1) + x1
-            yy = m * (y2 - y1) + y1
-            zz = m * (z2 - z1) + z1
-            if (xx * xx + yy * yy) >= rsqrd:
+            x = m * (x2 - x1) + x1
+            y = m * (y2 - y1) + y1
+            z = m * (z2 - z1) + z1
+            if (x * x + y * y) >= rsqrd:
                 break
-        return xx, yy, zz
+        return x, y, z

@@ -46,10 +46,8 @@ class Plotter(object):
         self.selected = None
         self.bar_length = 1.0
         # Colors
-        self.profile_color = "navy"
-        self.profile_point_color = "grey"
-        self.mid_color = "darkgreen"
-        self.mid_point_color = "grey"
+        self.outline_color = "blue"
+        self.grinding_line_color = "green"
         # Views we know about, will be an Axes object if we want to plot them
         self.ax_profile_view = None
         self.ax_end_view = None
@@ -112,13 +110,17 @@ class Plotter(object):
         cx, cy, cz = self.gouge.cutting_edge_curve(half=True)
         zz.extend(cz)
         yy.extend(cy)
-        gx, gy, gz = self.gouge.grinding_curve()
-        zz.extend(gz)
-        yy.extend(gy)
-        zz.append(-self.bar_length)
-        yy.append(-self.gouge.bar_radius)
-        ax.plot(zz, yy, 'o', color=self.mid_point_color)
-        ax.plot(zz, yy, '-', color=self.mid_point_color)
+        ax.plot(zz, yy, '-', color=self.outline_color)
+        gx, gy, gz = self.gouge.grinding_curve(cx[-1], cy[-1], cz[-1])
+        zz = [gz[-1], -self.bar_length]
+        yy = [gy[-1], -self.gouge.bar_radius]
+        ax.plot(zz, yy, '-', color=self.outline_color)
+        # Grinding lines
+        for ex, ey, ez in zip(cx, cy, cz):
+            logging.info("ex,y,z = %f %f %f" % (ex,ey,ez))
+            gx, gy, gz = self.gouge.grinding_curve(ex, ey, ez)
+            ax.plot(gz, gy, '-', color=self.grinding_line_color)
+
         # Size and axes
         ax.set_aspect('equal', 'datalim')
         ax.xaxis.set_major_locator(MultipleLocator(1.0))
@@ -129,11 +131,17 @@ class Plotter(object):
     def plot_end_view(self, ax):
         """Plot end view gouge on matplotlib axes ax."""
         bx, by, bz = self.gouge.bar_end_curve()
-        ax.plot(bx, by, '-', color=self.mid_point_color)
+        ax.plot(bx, by, '-', color=self.outline_color)
 
         cx, cy, cz = self.gouge.cutting_edge_curve()
-        ax.plot(cx, cy, '-', color=self.mid_point_color)
-        ax.plot(cx, cy, 'o', color=self.mid_point_color)
+        ax.plot(cx, cy, '-', color=self.outline_color)
+        ax.plot(cx, cy, 'o', color=self.outline_color)
+
+        # Grinding lines
+        for ex, ey, ez in zip(cx, cy, cz):
+            logging.info("ex,y,z = %f %f %f" % (ex,ey,ez))
+            gx, gy, gz = self.gouge.grinding_curve(ex, ey, ez)
+            ax.plot(gx, gy, '-', color=self.grinding_line_color)
 
         # Size and axes
         ax.set_aspect('equal', 'datalim')
@@ -158,15 +166,15 @@ class Plotter(object):
         xx.extend(cx)
         zz.append(-self.bar_length)
         xx.append(self.gouge.bar_top_width)
-        ax.plot(zz, xx, '-', color=self.mid_point_color, linewidth=2)
+        ax.plot(zz, xx, '-', color=self.outline_color, linewidth=2)
 
         # Edge of bar and trailing edge (not all to be seen)
         zz = [-self.bar_length]
         xx = [-self.gouge.bar_radius]
         zz.extend([0.0, 0.0])  # FIXME - need curve
         xx.extend([-self.gouge.bar_radius, -self.gouge.bar_radius / 2.0])
-        ax.plot(zz, xx, '-', color=self.mid_point_color)
-        ax.plot(zz, numpy.multiply(xx, numpy.full_like(xx, -1.0)), '-', color=self.mid_point_color)
+        ax.plot(zz, xx, '-', color=self.outline_color)
+        ax.plot(zz, numpy.multiply(xx, numpy.full_like(xx, -1.0)), '-', color=self.outline_color)
 
         # Size and axes
         ax.set_aspect('equal', 'datalim')
