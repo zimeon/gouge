@@ -117,7 +117,6 @@ class Plotter(object):
         ax.plot(zz, yy, '-', color=self.outline_color)
         # Grinding lines
         for ex, ey, ez in zip(cx, cy, cz):
-            logging.info("ex,y,z = %f %f %f" % (ex,ey,ez))
             gx, gy, gz = self.gouge.grinding_curve(ex, ey, ez)
             ax.plot(gz, gy, '-', color=self.grinding_line_color)
 
@@ -139,7 +138,6 @@ class Plotter(object):
 
         # Grinding lines
         for ex, ey, ez in zip(cx, cy, cz):
-            logging.info("ex,y,z = %f %f %f" % (ex,ey,ez))
             gx, gy, gz = self.gouge.grinding_curve(ex, ey, ez)
             ax.plot(gx, gy, '-', color=self.grinding_line_color)
 
@@ -182,58 +180,3 @@ class Plotter(object):
         ax.minorticks_on()
         ax.xaxis.set_major_formatter(FuncFormatter(format_inches))
         ax.yaxis.set_major_formatter(FuncFormatter(format_inches))
-
-    def select_point_width_profile(self, w, y, ratio=1.5):
-        """Select point most closely matching w,y in sections view.
-
-        Require that the closest point is at least `ratio` times closer than the
-        next closest point.
-        """
-        mouse = Point(w, y)
-        closest = Point()
-        next_closest = Point()
-        # Bow to mid station
-        for s in self.gouge.bow_to_mid_stations():
-            # Defined widths as points, station labels above
-            xx, yy = self.gouge.breadth_curve(s)
-            for x, y in zip(xx, yy):
-                d = mouse.distance(x, y)
-                if (d < closest.mouse_distance):
-                    # New closest poi
-                    next_closest = closest
-                    closest = Point(x, y, station=s, mouse_distance=d)
-        # Stern to mid station
-        for s in self.gouge.stern_to_mid_stations():
-            # Defined widths as points, station labels above
-            xx, yy = self.gouge.breadth_curve(s, flip_x=True)
-            for x, y in zip(xx, yy):
-                d = mouse.distance(x, y)
-                if (d < closest.mouse_distance):
-                    # New closest point
-                    next_closest = closest
-                    closest = Point(x, y, station=s, mouse_distance=d)
-        if (closest.mouse_distance < (next_closest.mouse_distance / ratio)):
-            self.selected = closest
-            logging.warn("Got new point " + str(closest))
-        else:
-            self.selected = None
-            logging.warn("No point selected")
-
-    def move_point_width_profile(self, dx=0.0, dy=0.0):
-        """Move selection point in width profile by specified amount of width.
-
-        Width profile points can be moved only in x axis.
-        """
-        w = self.selected.x
-        y = self.selected.y
-        s = self.selected.station
-        for j, wy in enumerate(self.gouge.breadths[s]):
-            if (wy[0] == w and wy[1] == y):
-                self.selected.x += dx
-                self.gouge.breadths[s][j] = [self.selected.x, y]
-                return
-            if (wy[0] == -w and wy[1] == y):
-                self.selected.x += dx
-                self.gouge.breadths[s][j] = [-self.selected.x, y]
-                return
-        logging.warn("Failed to match point in move_point_width_profile")
