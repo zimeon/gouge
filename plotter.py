@@ -44,6 +44,7 @@ class Plotter(object):
         self.view = 'orthographic'
         self.station = 0
         self.selected = None
+        self.bar_length = 1.0
         # Colors
         self.profile_color = "navy"
         self.profile_point_color = "grey"
@@ -61,8 +62,6 @@ class Plotter(object):
         recacl - set True to reset gouge calculations (e.g. if internal settings
             have been altered)
         """
-        if (recalc):
-            self.gouge._reset_lazy_calcs()
         self.fig.clear()
         self.draw_orthographic()
         self.fig.canvas.draw()
@@ -71,17 +70,18 @@ class Plotter(object):
         """Set up and orthographic set of plots."""
         logging.info('draw_orthograpic')
         #
-        # Construct 2x2 grid with plots organized in orthographic
-        # projection
+        # Construct 2x2 grid with plots organized in
+        # orthographic projection
         #
         # [length profile]  [end view]
         # [  plan view   ]
         #
-        plt_w = self.gouge.bar_diameter * 1.5
-        plt_l = self.gouge.bar_diameter * 3.0
-        gs = gridspec.GridSpec(2, 2,
-                               width_ratios=[plt_l, plt_w],
-                               height_ratios=[plt_w, plt_w])
+        #plt_w = self.gouge.bar_diameter * 1.5
+        #plt_l = self.gouge.bar_diameter * self.bar_length
+        gs = gridspec.GridSpec(2, 2)
+        #,
+        #                       width_ratios=[plt_l, plt_w],
+        #                       height_ratios=[plt_w, plt_w])
         self.ax_profile_view = self.fig.add_subplot(gs[0])
         self.ax_end_view = self.fig.add_subplot(gs[1])
         self.ax_plan_view = self.fig.add_subplot(gs[2])
@@ -107,13 +107,17 @@ class Plotter(object):
         Draws the profile along bar top, down cutting edge,
         down ground edge, and then back along the bar.
         """
-        zz = [-3.0]
+        zz = [-self.bar_length]
         yy = [self.gouge.bar_top_height]
         cx, cy, cz = self.gouge.cutting_edge_curve(half=True)
         zz.extend(cz)
         yy.extend(cy)
-        zz.append(-3.0)
+        gx, gy, gz = self.gouge.grinding_curve()
+        zz.extend(gz)
+        yy.extend(gy)
+        zz.append(-self.bar_length)
         yy.append(-self.gouge.bar_radius)
+        ax.plot(zz, yy, 'o', color=self.mid_point_color)
         ax.plot(zz, yy, '-', color=self.mid_point_color)
         # Size and axes
         ax.set_aspect('equal', 'datalim')
@@ -133,6 +137,7 @@ class Plotter(object):
 
         # Size and axes
         ax.set_aspect('equal', 'datalim')
+        ax.xaxis.set_major_locator(MultipleLocator(1.0))
         ax.minorticks_on()
         ax.xaxis.set_major_formatter(FuncFormatter(format_inches))
         ax.yaxis.set_major_formatter(FuncFormatter(format_inches))
@@ -146,17 +151,17 @@ class Plotter(object):
         In model space this has -z horizontal and +x vertical.
         """
         # Top of channel and then curring edge
-        zz = [-3.0]
+        zz = [-self.bar_length]
         xx = [-self.gouge.bar_top_width]
         cx, cy, cz = self.gouge.cutting_edge_curve()
         zz.extend(cz)
         xx.extend(cx)
-        zz.append(-3.0)
+        zz.append(-self.bar_length)
         xx.append(self.gouge.bar_top_width)
-        ax.plot(zz, xx, '-', color=self.mid_point_color)
+        ax.plot(zz, xx, '-', color=self.mid_point_color, linewidth=2)
 
         # Edge of bar and trailing edge (not all to be seen)
-        zz = [-3.0]
+        zz = [-self.bar_length]
         xx = [-self.gouge.bar_radius]
         zz.extend([0.0, 0.0])  # FIXME - need curve
         xx.extend([-self.gouge.bar_radius, -self.gouge.bar_radius / 2.0])
@@ -218,11 +223,9 @@ class Plotter(object):
             if (wy[0] == w and wy[1] == y):
                 self.selected.x += dx
                 self.gouge.breadths[s][j] = [self.selected.x, y]
-                self.gouge._reset_lazy_calcs()
                 return
             if (wy[0] == -w and wy[1] == y):
                 self.selected.x += dx
                 self.gouge.breadths[s][j] = [-self.selected.x, y]
-                self.gouge._reset_lazy_calcs()
                 return
         logging.warn("Failed to match point in move_point_width_profile")

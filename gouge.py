@@ -9,7 +9,6 @@ import numpy
 import time
 
 from util import format_inches, format_feet_inches, fill_range
-from fairing import FairCurve
 
 
 class Gouge(object):
@@ -28,11 +27,9 @@ class Gouge(object):
         self.profile = [], []        # profile of cutting edge
         # Grinding setup
         self.wheel_diameter = 8.0    # inches
-        self.nose_angle = 50.0       # degrees
+        self.nose_angle = math.radians(50.0)   # degrees
         # Data formatting
         self.units = 'inches'
-        # Initialize stored values for lazy calculation
-        self._reset_lazy_calcs()
 
     @property
     def bar_radius(self):
@@ -49,19 +46,17 @@ class Gouge(object):
         """Width in bar at top of channel."""
         return math.sin(self.bar_channel_angle) * self.bar_diameter / 2.0
 
-    def _reset_lazy_calcs(self):
-        # Initialize/reset values for lazy eval
-        pass
-
     def set_channel_parabola(self):
-        """Set self.channel to be a parabola."""
+        """Set self.channel to be a parabola.
+
+        Parabola starts 0.1 * bar_diameter below center.
+        """
         cx, cy = [], []
         r = self.bar_radius
-        last_x = 0.0
-        last_y = 0.0
+        last_x, last_y = 0.0, 0.0
         for f in numpy.arange(0.0, +1.1, 0.1):
             x = f * r
-            y = f*f * r
+            y = f*f * r - 0.1 * self.bar_diameter
             # Have we gone outside bar?
             if (x * x + y * y) >= r * r:
                 # Calculate intercept for line from last_x, last_y
@@ -107,7 +102,6 @@ class Gouge(object):
     def solve(self):
         """Solve model ready for plotting etc.."""
         pass
-        self._reset_lazy_calcs()
 
     def bar_end_curve(self):
         """Curve of bar end.
@@ -150,3 +144,61 @@ class Gouge(object):
             if half:
                 break  # Stop after bottom middle point
         return cx, cy, cz
+
+    def grinding_curve(self):
+        """Calculate grining wheel curve from cutting edge to bar edge."""
+        # Grinding wheel center in gouge coords
+        nz = 0
+        ny = self.channel[1][0]
+        # Calculate z and y distances (+ve) of wheel center from origin
+        wcz = math.sin(self.nose_angle) * self.wheel_diameter
+        wcy = math.cos(self.nose_angle) * self.wheel_diameter - ny
+        max_angle_change = self.bar_diameter / self.wheel_diameter
+        gx, gy, gz = [], [ny], [nz]
+        r = self.bar_radius
+        last_x, last_y, last_z = 0.0, 0.0, 0.0
+        xx, yy, zz = 0.0, 0.0, 0.0
+        for a in numpy.arange(self.nose_angle, self.nose_angle + max_angle_change, max_angle_change / 20.0):
+            x = 0.0
+            y = math.cos(a) * self.wheel_diameter - wcy
+            z = wcz - math.sin(a) * self.wheel_diameter
+            # Have we gone outside bar?
+            if (x * x + y * y) >= r * r:
+                xx, yy, zz = self.bar_intercept(
+                                 last_x, last_y, last_z,
+                                 x, y, z)
+                break
+            # Still inside bar diameter
+            gx.append(x)
+            gy.append(y)
+            gz.append(z)
+            last_x = x
+            last_y = y
+            last_z = z
+        # Now have intercept, add last point exactly on bar edge
+        # Now calculate angle of intercept with bar
+        end_angle = math.atan2(xx, yy)
+        x = r * math.sin(end_angle)
+        y = r * math.cos(end_angle)
+        z = zz
+        gx.append(x)
+        gy.append(y)
+        gz.append(z)
+        return gx, gy, gz
+
+    def bar_intercept(self, x1, y1, z1, x2, y2, z2):
+        """Calculate intercept with bar surface.
+
+        Find intercept point between (x1,y1,z1) and
+        (x2,y2,z2) and the bar surface. Assumes that
+        (x1,y1,z1) is inside the bar, (x2,y2,z2)
+        outside.
+        """
+        rsqrd = self.bar_radius * self.bar_radius
+        for m in numpy.arange(0.0, 1.0, 0.01):
+            xx = m * (x2 - x1) + x1
+            yy = m * (y2 - y1) + y1
+            zz = m * (z2 - z1) + z1
+            if (xx * xx + yy * yy) >= rsqrd:
+                break
+        return xx, yy, zz
