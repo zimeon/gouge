@@ -1,6 +1,5 @@
 """Gouge model plotter."""
 
-import datetime
 import numpy
 import math
 import matplotlib.pyplot as plt

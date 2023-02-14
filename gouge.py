@@ -3,12 +3,8 @@
 """
 
 import logging
-import re
 import math
 import numpy
-import time
-
-from util import format_inches, format_feet_inches, fill_range
 
 
 class Gouge(object):
