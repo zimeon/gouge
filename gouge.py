@@ -13,8 +13,13 @@ class Gouge(object):
     def __init__(self):
         """Initialize Gouge object, optionally read from filename.
 
+        - channel = [x array] [y array] that represents one side
+                    the channel profile from the nose to the top
+                    of the +ve x side. channel[1][0] is the y
+                    position of the nose.
+
         Sadly, all measurements are in inches because that is the
-        way the industry works
+        way the industry works ;-)
         """
         self.title = "Gouge"
         self.bar_diameter = 0.5      # bar diameter in inches
@@ -41,6 +46,11 @@ class Gouge(object):
     def bar_top_width(self):
         """Width in bar at top of channel."""
         return math.sin(self.bar_channel_angle) * self.bar_diameter / 2.0
+
+    @property
+    def channel_bottom_y(self):
+        """Channel bottom y value, also nose y value."""
+        return self.channel[1][0]
 
     def set_channel_parabola(self):
         """Set self.channel to be a parabola.
@@ -76,7 +86,7 @@ class Gouge(object):
     def set_profile_flat(self, angle=30.0):
         """Set up flat wing profile at angle from centerline."""
         # First find bottom of channel
-        ybot = self.channel[1][0]
+        ybot = self.channel_bottom_y
         logging.info("ybot = %f" % ybot)
         # Find y value at end of wing (=channel top edge)
         ytop = math.sin(self.bar_channel_angle) * self.bar_radius
@@ -201,3 +211,28 @@ class Gouge(object):
             if (x * x + y * y) >= rsqrd:
                 break
         return x, y, z
+
+
+class GrindingJig(object):
+    """Model for a gouge grinding jig."""
+
+    def __init__(self):
+        """Initialize GrindingJig object.
+
+        Properties:
+        - length -- point to gouge tip distance in inches
+        - angle -- offset angle in radians
+        """
+        self.length = 8.0           # point to gouge tip
+        self.angle = radians(30.0)  # offset angle of bar/flute
+
+    def point_position(self, nose_y, nose_angle):
+        """Calculate point position from gouge nose position and angle.
+
+        Assume point is centered and jig upright when on
+        gouge nose so that we will have a symmetric
+        grind. We thus do not consider x coordinates, just a +ve z
+        and a -ve y.
+        """
+        pass
+ 

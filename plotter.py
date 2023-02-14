@@ -146,9 +146,6 @@ class Plotter(object):
         ax.minorticks_on()
         ax.xaxis.set_major_formatter(FuncFormatter(format_inches))
         ax.yaxis.set_major_formatter(FuncFormatter(format_inches))
-        # Selected point?
-        if (self.selected is not None):
-            ax.plot([self.selected.x], [self.selected.y], marker='x', markersize=10, color="red")
 
     def plot_plan_view(self, ax):
         """Plot plan view of self.gouge on matplotlib axes ax.
