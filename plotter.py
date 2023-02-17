@@ -62,6 +62,7 @@ class Plotter(object):
         self.fig.clear()
         self.draw_orthographic()
         self.fig.canvas.draw()
+        self.gouge.cutting_edge_curve()
 
     def draw_orthographic(self):
         """Set up and orthographic set of plots."""
@@ -106,7 +107,7 @@ class Plotter(object):
         """
         zz = [-self.bar_length]
         yy = [self.gouge.bar_top_height]
-        cx, cy, cz = self.gouge.cutting_edge_curve(half=True)
+        cx, cy, cz = self.gouge.cutting_edge_curve_points(half=True)
         zz.extend(cz)
         yy.extend(cy)
         ax.plot(zz, yy, '-', color=self.outline_color)
@@ -131,8 +132,8 @@ class Plotter(object):
         bx, by, bz = self.gouge.bar_end_curve()
         ax.plot(bx, by, '-', color=self.outline_color)
 
-        cx, cy, cz = self.gouge.cutting_edge_curve()
-        ax.plot(cx, cy, '-', color=self.outline_color)
+        cx, cy, cz = self.gouge.cutting_edge_curve_points()
+        ax.plot(cx, cy, '-', color="red")
         ax.plot(cx, cy, 'o', color=self.outline_color)
 
         # Grinding lines
@@ -155,7 +156,7 @@ class Plotter(object):
         # Top of channel and then curring edge
         zz = [-self.bar_length]
         xx = [-self.gouge.bar_top_width]
-        cx, cy, cz = self.gouge.cutting_edge_curve()
+        cx, cy, cz = self.gouge.cutting_edge_curve_points()
         zz.extend(cz)
         xx.extend(cx)
         zz.append(-self.bar_length)

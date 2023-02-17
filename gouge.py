@@ -5,6 +5,7 @@
 import logging
 import math
 import numpy
+from scipy.interpolate import CubicSpline
 
 
 class Gouge(object):
@@ -123,8 +124,8 @@ class Gouge(object):
             bz.append(0)
         return bx, by, bz
 
-    def cutting_edge_curve(self, half=False):
-        """Curve defining the cutting edge.
+    def cutting_edge_points(self, half=False):
+        """Points defining the cutting edge curve.
 
         This is the curve of the cutting edge. Looking in
         x,y (end view) it follows the channel. Looking in
@@ -145,6 +146,56 @@ class Gouge(object):
             cz.append(numpy.interp(self.channel[1][j], self.profile[0], self.profile[1]))
             if half:
                 break  # Stop after bottom middle point
+        return cx, cy, cz
+
+    def cutting_edge_curve(self):
+        """Spline curve for the cutting edge.
+
+        Spline interpolation of self.cutting_edge.points()
+        that is parametrized from -1.0 to +1.0, where 0.0 is
+        the nose. The parameterization is done so that the is
+        approximately linear relation to distance along the
+        edge.
+        """
+        cx, cy, cz = self.cutting_edge_points(half=False)
+        d_tot = 0.0
+        d = [0.0]
+        last_x, last_y, last_z = None, None, None
+        for ex, ey, ez in zip(cx, cy, cz):
+            if last_x is not None:
+                d_tot += math.sqrt((ex - last_x) ** 2 + (ey - last_y) ** 2 + (ez - last_z) ** 2)
+                d.append(d_tot)
+            last_x, last_y, last_z = ex, ey, ez
+        scale = 2.0 / d_tot
+        d = numpy.add(numpy.multiply(d, scale), -1.0)
+        spline = CubicSpline(d, numpy.c_[cx, cy, cz], extrapolate=True)
+        #for j in range(0, len(d)):
+        #    print(d[j], c(d[j]))
+        return spline
+
+    def cutting_edge_curve_points(self, number=21, half=False):
+        """Set of evenly spaced points along the cutting edge.
+
+        The set of `number` points (use odd number so there is
+        a point at the nose) is approximately eveny distributed
+        along the cutting edge, derived fro mthe spline
+        curver self.cutting_edge_curve().
+
+        `number` refers to the whole curve whether or not `half`
+        is set True. In that case there will be `(number + 1) / 2`
+        points.
+        """
+        spline = self.cutting_edge_curve()
+        cx, cy, cz = [], [], []
+        if half:
+            range = numpy.linspace(-1.0, 0.0, int((number + 1) / 2))
+        else:
+            range = numpy.linspace(-1.0, 1.0, number)
+        for aj in range:
+            x, y, z = spline(aj)
+            cx.append(x)
+            cy.append(y)
+            cz.append(z)
         return cx, cy, cz
 
     def grinding_curve(self, ex, ey, ez):
@@ -235,4 +286,3 @@ class GrindingJig(object):
         and a -ve y.
         """
         pass
- 
