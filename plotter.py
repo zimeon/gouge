@@ -111,6 +111,7 @@ class Plotter(object):
         zz.extend(cz)
         yy.extend(cy)
         ax.plot(zz, yy, '-', color=self.outline_color)
+
         gx, gy, gz = self.gouge.grinding_curve(cx[-1], cy[-1], cz[-1])
         zz = [gz[-1], -self.bar_length]
         yy = [gy[-1], -self.gouge.bar_radius]

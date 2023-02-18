@@ -53,6 +53,11 @@ class Gouge(object):
         """Channel bottom y value, also nose y value."""
         return self.channel[1][0]
 
+    @property
+    def wheel_radius(self):
+        """Radius of grinding wheel."""
+        return self.wheel_diameter / 2.0
+
     def set_channel_parabola(self):
         """Set self.channel to be a parabola.
 
@@ -205,23 +210,23 @@ class Gouge(object):
         """
         # Calculate z and y distances (+ve) of wheel center from origin
         wcx = 0.0
-        wcy = math.cos(self.nose_angle) * self.wheel_diameter - ey
-        wcz = math.sin(self.nose_angle) * self.wheel_diameter
+        wcy = math.cos(self.nose_angle) * self.wheel_radius - ey
+        wcz = math.sin(self.nose_angle) * self.wheel_radius
         return self.grinding_curve_from_point(ex, ey, ez,
                                               wcx, wcy, wcz)
 
     def grinding_curve_from_point(self,
                                   ex, ey, ez,
                                   wcx, wcy, wcz):
-        max_angle_change = self.bar_diameter / self.wheel_diameter
+        max_angle_change = self.bar_diameter / self.wheel_radius
         gx, gy, gz = [ex], [ey], [ez]
         r = self.bar_radius
         last_x, last_y, last_z = ex, ey, ez
         xx, yy, zz = 0.0, 0.0, 0.0
         for a in numpy.arange(self.nose_angle, self.nose_angle + max_angle_change, max_angle_change / 20.0):
             x = ex
-            y = math.cos(a) * self.wheel_diameter - wcy
-            z = ez + wcz - math.sin(a) * self.wheel_diameter
+            y = math.cos(a) * self.wheel_radius - wcy
+            z = ez + wcz - math.sin(a) * self.wheel_radius
             # Have we gone outside bar?
             if (x * x + y * y) >= r * r:
                 xx, yy, zz = self.bar_intercept(
