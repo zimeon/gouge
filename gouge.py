@@ -9,10 +9,10 @@ from scipy.interpolate import CubicSpline
 
 
 class Gouge(object):
-    """Class to digitally loft a canoe gouge design."""
+    """Class to model a gouge and its ground edge."""
 
     def __init__(self):
-        """Initialize Gouge object, optionally read from filename.
+        """Initialize Gouge object.
 
         - channel = [x array] [y array] that represents one side
                     the channel profile from the nose to the top
@@ -32,6 +32,8 @@ class Gouge(object):
         self.nose_angle = math.radians(50.0)   # degrees
         # Data formatting
         self.units = 'inches'
+        # Grinding solutions
+        self.spline = None           # spline curve of cutting edge
 
     @property
     def bar_radius(self):
@@ -69,12 +71,12 @@ class Gouge(object):
         xx, yy = 0.0, 0.0
         for f in numpy.arange(0.0, +1.1, 0.1):
             x = f * r
-            y = f*f * r - 0.1 * self.bar_diameter
+            y = f * f * r - 0.1 * self.bar_diameter
             # Have we gone outside bar?
             if (x * x + y * y) >= r * r:
                 xx, yy, zz = self.bar_intercept(
-                                 last_x, last_y, 0.0,
-                                 x, y, 0.0)
+                    last_x, last_y, 0.0,
+                    x, y, 0.0)
                 break
             # Still inside bar diameter
             cx.append(x)
@@ -107,9 +109,11 @@ class Gouge(object):
             pz.append(z)
         self.profile = py, pz
 
-    def solve(self):
+    def solve(self, num_points=21):
         """Solve model ready for plotting etc.."""
-        pass
+        self.num_points = 21
+        self.cutting_edge_mid_point = (self.num_points - 1) / 2
+        self.spline = self.cutting_edge_curve()
 
     def bar_end_curve(self):
         """Curve of bar end.
@@ -173,31 +177,33 @@ class Gouge(object):
             last_x, last_y, last_z = ex, ey, ez
         scale = 2.0 / d_tot
         d = numpy.add(numpy.multiply(d, scale), -1.0)
-        spline = CubicSpline(d, numpy.c_[cx, cy, cz], extrapolate=True)
-        #for j in range(0, len(d)):
-        #    print(d[j], c(d[j]))
-        return spline
+        return CubicSpline(d, numpy.c_[cx, cy, cz], extrapolate=True)
 
-    def cutting_edge_curve_points(self, number=21, half=False):
-        """Set of evenly spaced points along the cutting edge.
+    def cutting_edge_range(self, half=False):
+        """Evenly space points in range -1.0 to 1.0.
+
+        Designed to follow the parameterization of the cutting
+        edge spline with self.num_points in total
 
         The set of `number` points (use odd number so there is
         a point at the nose) is approximately eveny distributed
-        along the cutting edge, derived fro mthe spline
+        along the cutting edge, derived from the spline
         curver self.cutting_edge_curve().
 
         `number` refers to the whole curve whether or not `half`
         is set True. In that case there will be `(number + 1) / 2`
         points.
         """
-        spline = self.cutting_edge_curve()
-        cx, cy, cz = [], [], []
         if half:
-            range = numpy.linspace(-1.0, 0.0, int((number + 1) / 2))
-        else:
-            range = numpy.linspace(-1.0, 1.0, number)
-        for aj in range:
-            x, y, z = spline(aj)
+            return numpy.linspace(-1.0, 0.0, int((self.num_points + 1) / 2))
+        # else:
+        return numpy.linspace(-1.0, 1.0, self.num_points)
+
+    def cutting_edge_curve_points(self, half=False):
+        """Set of evenly spaced points along the cutting edge."""
+        cx, cy, cz = [], [], []
+        for aj in self.cutting_edge_range(half=half):
+            x, y, z = self.spline(aj)
             cx.append(x)
             cy.append(y)
             cz.append(z)
@@ -230,8 +236,8 @@ class Gouge(object):
             # Have we gone outside bar?
             if (x * x + y * y) >= r * r:
                 xx, yy, zz = self.bar_intercept(
-                                 last_x, last_y, last_z,
-                                 x, y, z)
+                    last_x, last_y, last_z,
+                    x, y, z)
                 break
             # Still inside bar diameter
             gx.append(x)
@@ -283,7 +289,7 @@ class GrindingJig(object):
         self.angle = math.radians(30.0)  # offset angle of bar/flute
 
     def tool_vectors(self, rotation=0.0):
-        """Calculate the tool y and z vectors at given rotation.
+        """Calculate the tool y and z unit vectors at given jig rotation.
 
         Vectors are
         """
@@ -296,8 +302,10 @@ class GrindingJig(object):
         elbow_x = g * (1.0 - math.cos(rotation))
         elbow_y = wy - h * math.sin(rotation)
         elbow_z = f * math.sin(rotation)
-        return (elbow_x, elbow_y, elbow_z,
-                (wx - elbow_x), (wy - elbow_y), -elbow_z)
+        y = [elbow_x, elbow_y, elbow_z]
+        y_hat = y / numpy.linalg.norm(y)
+        z = [(wx - elbow_x), (wy - elbow_y), (wz - elbow_z)]
+        z_hat = z / numpy.linalg.norm(z)
 
     def point_position(self, nose_y, nose_angle):
         """Calculate point position from gouge nose position and angle.

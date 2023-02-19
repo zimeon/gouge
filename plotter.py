@@ -59,10 +59,10 @@ class Plotter(object):
         recacl - set True to reset gouge calculations (e.g. if internal settings
             have been altered)
         """
+        self.gouge.solve()
         self.fig.clear()
         self.draw_orthographic()
         self.fig.canvas.draw()
-        self.gouge.cutting_edge_curve()
 
     def draw_orthographic(self):
         """Set up and orthographic set of plots."""
