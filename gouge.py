@@ -279,8 +279,25 @@ class GrindingJig(object):
         - length -- point to gouge tip distance in inches
         - angle -- offset angle in radians
         """
-        self.length = 8.0           # point to gouge tip
-        self.angle = radians(30.0)  # offset angle of bar/flute
+        self.length = 8.0                # point to gouge tip
+        self.angle = math.radians(30.0)  # offset angle of bar/flute
+
+    def tool_vectors(self, rotation=0.0):
+        """Calculate the tool y and z vectors at given rotation.
+
+        Vectors are
+        """
+        wx = self.length * math.cos(self.angle)
+        wy = self.length * math.sin(self.angle)
+        wz = 0
+        f = wx * math.sin(self.angle)
+        g = f * math.sin(self.angle)
+        h = f * math.cos(self.angle)
+        elbow_x = g * (1.0 - math.cos(rotation))
+        elbow_y = wy - h * math.sin(rotation)
+        elbow_z = f * math.sin(rotation)
+        return (elbow_x, elbow_y, elbow_z,
+                (wx - elbow_x), (wy - elbow_y), -elbow_z)
 
     def point_position(self, nose_y, nose_angle):
         """Calculate point position from gouge nose position and angle.
