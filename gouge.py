@@ -7,6 +7,10 @@ import math
 import numpy
 from scipy.interpolate import CubicSpline
 
+def unit_vector(v):
+    """Unit vector in direction of vector v."""
+    return v / numpy.linalg.norm(v)
+
 
 class Gouge(object):
     """Class to model a gouge and its ground edge."""
@@ -114,6 +118,7 @@ class Gouge(object):
         self.num_points = 21
         self.cutting_edge_mid_point = (self.num_points - 1) / 2
         self.spline = self.cutting_edge_curve()
+        self.solve_grinding_for_edge_points()
 
     def bar_end_curve(self):
         """Curve of bar end.
@@ -209,8 +214,30 @@ class Gouge(object):
             cz.append(z)
         return cx, cy, cz
 
+    def solve_grinding_for_edge_points(self):
+        """Find grinding jig angle at each cutting edge point.
+
+        We assert that at each point on the cutting edge the vector
+        along the edge must be in the plane of the grinding wheel
+        surface in order to be part of the ground curve. From this
+        we can find the required grinding jig angle at that point.
+        Or, if we can't, then the suggested curve is impossible
+        and raise an exception.
+        """
+        cx, cy, cz = [], [], []
+        logging.info("Solving for grinding edge...")
+        jig = GrindingJig()
+        for aj in self.cutting_edge_range(half=True):
+            logging.info("aj = %f" % aj)
+            x, y, z = self.spline(aj)
+            dx, dy, dz = unit_vector(self.spline(aj, 1))
+            logging.info("dx dy dz = %.3f %.3f %.3f" % (dx, dy, dz))
+            for a in numpy.linspace(0, 90.0, 18):
+                y_hat, z_hat = jig.tool_vectors(a)
+                logging.info("y_hat, z_hat = %s, %s" % (str(y_hat), str(z_hat)))
+
     def grinding_curve(self, ex, ey, ez):
-        """Calculate grining wheel curve from cutting edge to bar edge.
+        """Calculate grinding wheel curve from cutting edge to bar edge.
 
         Starting point on cutting edge is (ex, ey, ez).
         """
@@ -303,9 +330,10 @@ class GrindingJig(object):
         elbow_y = wy - h * math.sin(rotation)
         elbow_z = f * math.sin(rotation)
         y = [elbow_x, elbow_y, elbow_z]
-        y_hat = y / numpy.linalg.norm(y)
+        y_hat = unit_vector(y)
         z = [(wx - elbow_x), (wy - elbow_y), (wz - elbow_z)]
-        z_hat = z / numpy.linalg.norm(z)
+        z_hat = unit_vector(z)
+        return y_hat, z_hat
 
     def point_position(self, nose_y, nose_angle):
         """Calculate point position from gouge nose position and angle.

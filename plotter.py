@@ -10,6 +10,27 @@ import sys
 
 from util import format_inches, format_feet_inches, fill_range, round_up, round_down
 
+def select_projection(points, proj):
+    """Select coordinate sets for given projection.
+
+    `proj` options: `xy`, `yz`, `xz`
+    """
+    a, b = [], []
+    for point in points:
+        if proj == 'xy':
+            a.append(point[0])
+            b.append(point[1])
+        elif proj == 'yz':
+            a.append(point[1])
+            b.append(point[2])
+        elif proj == 'xz':
+            a.append(point[0])
+            b.append(point[2])
+        else:
+            logging.warn("Unknown projection '%s'" % proj)
+            sys.exit(1)
+    return a, b
+
 
 class Point(object):
     """Class to represent selected point."""
