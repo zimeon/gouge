@@ -228,18 +228,25 @@ class Gouge(object):
         logging.info("Solving for grinding edge...")
         jig = GrindingJig(self.nose_angle)
         for aj in self.cutting_edge_range(half=True):
-            logging.info("aj = %f" % aj)
+            logging.info("=== aj = %f" % aj)
             x, y, z = self.spline(aj)
             dx, dy, dz = unit_vector(self.spline(aj, 1))
-            logging.info("dx dy dz = %.3f %.3f %.3f" % (dx, dy, dz))
-            for a in numpy.linspace(0, 90.0, 18):
-                logging.info("=== jig.rot = %.1f" % a)
-                y_hat, z_hat = jig.tool_vectors(rotation=math.radians(a))
-                logging.info(" y_hat, |y_hat| = %s, %.5f" % (str(y_hat), numpy.linalg.norm(y_hat)))
-                logging.info(" z_hat, |z_hat| = %s, %.5f" % (str(z_hat), numpy.linalg.norm(z_hat)))
-                logging.info(" y_hat.z_hat = %.5f" % (numpy.dot(y_hat, z_hat)))
-                x_hat = numpy.cross(y_hat, z_hat)
-                logging.info(" x_hat, |x_hat| = %s, %.5f" % (str(x_hat), numpy.linalg.norm(x_hat)))
+            edge = numpy.array([dx, dy, dz])
+            logging.info(" edge = %s" % str(edge))
+            min_dot = 99.0
+            a_for_min = 999.0
+            for a in numpy.linspace(0, -100.0, 500):
+                r = jig.tool_rotation_matrix(rotation=math.radians(a))
+                #logging.info(" r = %s" % str(r))
+                # Get grinding wheel normal in tool coords
+                gwn = (jig.grinding_wheel_normal() * r).transpose()
+                #logging.info(" gwn = %s" % str(gwn))
+                # Is edge in grinding wheel plane?
+                dot = numpy.dot(edge, gwn)
+                if abs(dot) < abs(min_dot):
+                    min_dot = dot
+                    a_for_min = a
+            logging.info(" rot=%.1f dot = %.4f" % (a_for_min, min_dot))
 
     def grinding_curve(self, ex, ey, ez):
         """Calculate grinding wheel curve from cutting edge to bar edge.
@@ -310,7 +317,7 @@ class Gouge(object):
 class GrindingJig(object):
     """Model for a gouge grinding jig."""
 
-    def __init__(self, nose_angle=50.0):
+    def __init__(self, nose_angle=math.radians(50.0)):
         """Initialize GrindingJig object.
 
         Properties:
@@ -319,13 +326,13 @@ class GrindingJig(object):
         - nose_angle -- nose angle on gouge which is the grinding
             wheel tangent when the jig is upright/centered
         """
-        self.length = 8.0                # point to gouge tip
-        self.angle = math.radians(30.0)  # offset angle of bar/flute
-        self.nose_angle = nose_angle     # nose angle on gouge
+        self.length = 6.0                # point to gouge tip
+        self.angle = math.radians(70.0)  # offset angle of bar/flute
+        self.nose_angle = nose_angle     # nose angle on gouge (radians)
 
     def grinding_wheel_normal(self):
         """Unit vector normal to grinding wheel surface at contact."""
-        return [math.cos(self.nose_angle), math.sin(self.nose_angle), 0]
+        return numpy.array([math.cos(self.nose_angle), math.sin(self.nose_angle), 0.0])
 
     def tool_vectors(self, rotation=0.0):
         """Calculate the tool y and z unit vectors at given jig rotation.
@@ -341,8 +348,21 @@ class GrindingJig(object):
         elbow_x = g * (1.0 - math.cos(rotation))
         elbow_y = wy - h * (1.0 - math.cos(rotation))
         elbow_z = f * math.sin(rotation)
-        y = [elbow_x, elbow_y, elbow_z]
+        y = numpy.array([elbow_x, elbow_y, elbow_z])
+        z = numpy.array([(wx - elbow_x), (wy - elbow_y), (wz - elbow_z)])
+        return y, z
+
+    def tool_rotation_matrix(self, rotation=0.0):
+        """Matrix to rotate tool coordinates to jig/wheel coords.
+
+        """
+        y, z = self.tool_vectors(rotation)
         y_hat = unit_vector(y)
-        z = [(wx - elbow_x), (wy - elbow_y), (wz - elbow_z)]
         z_hat = unit_vector(z)
-        return y_hat, z_hat
+        x_hat = numpy.cross(y_hat, z_hat)
+        # logging.info("   === jig.rot = %.1f" % math.degrees(rotation))
+        # logging.info("   x_hat, |x_hat| = %s, %.5f" % (str(x_hat), numpy.linalg.norm(x_hat)))
+        # logging.info("   y_hat, |y_hat| = %s, %.5f" % (str(y_hat), numpy.linalg.norm(y_hat)))
+        # logging.info("   z_hat, |z_hat| = %s, %.5f" % (str(z_hat), numpy.linalg.norm(z_hat)))
+        # logging.info("   y_hat.z_hat = %.5f" % (numpy.dot(y_hat, z_hat)))
+        return numpy.matrix([x_hat, y_hat, z_hat])  #.transpose()
