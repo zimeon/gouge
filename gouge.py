@@ -226,15 +226,20 @@ class Gouge(object):
         """
         cx, cy, cz = [], [], []
         logging.info("Solving for grinding edge...")
-        jig = GrindingJig()
+        jig = GrindingJig(self.nose_angle)
         for aj in self.cutting_edge_range(half=True):
             logging.info("aj = %f" % aj)
             x, y, z = self.spline(aj)
             dx, dy, dz = unit_vector(self.spline(aj, 1))
             logging.info("dx dy dz = %.3f %.3f %.3f" % (dx, dy, dz))
             for a in numpy.linspace(0, 90.0, 18):
-                y_hat, z_hat = jig.tool_vectors(a)
-                logging.info("y_hat, z_hat = %s, %s" % (str(y_hat), str(z_hat)))
+                logging.info("=== jig.rot = %.1f" % a)
+                y_hat, z_hat = jig.tool_vectors(rotation=math.radians(a))
+                logging.info(" y_hat, |y_hat| = %s, %.5f" % (str(y_hat), numpy.linalg.norm(y_hat)))
+                logging.info(" z_hat, |z_hat| = %s, %.5f" % (str(z_hat), numpy.linalg.norm(z_hat)))
+                logging.info(" y_hat.z_hat = %.5f" % (numpy.dot(y_hat, z_hat)))
+                x_hat = numpy.cross(y_hat, z_hat)
+                logging.info(" x_hat, |x_hat| = %s, %.5f" % (str(x_hat), numpy.linalg.norm(x_hat)))
 
     def grinding_curve(self, ex, ey, ez):
         """Calculate grinding wheel curve from cutting edge to bar edge.
@@ -305,15 +310,22 @@ class Gouge(object):
 class GrindingJig(object):
     """Model for a gouge grinding jig."""
 
-    def __init__(self):
+    def __init__(self, nose_angle=50.0):
         """Initialize GrindingJig object.
 
         Properties:
         - length -- point to gouge tip distance in inches
         - angle -- offset angle in radians
+        - nose_angle -- nose angle on gouge which is the grinding
+            wheel tangent when the jig is upright/centered
         """
         self.length = 8.0                # point to gouge tip
         self.angle = math.radians(30.0)  # offset angle of bar/flute
+        self.nose_angle = nose_angle     # nose angle on gouge
+
+    def grinding_wheel_normal(self):
+        """Unit vector normal to grinding wheel surface at contact."""
+        return [math.cos(self.nose_angle), math.sin(self.nose_angle), 0]
 
     def tool_vectors(self, rotation=0.0):
         """Calculate the tool y and z unit vectors at given jig rotation.
@@ -327,20 +339,10 @@ class GrindingJig(object):
         g = f * math.sin(self.angle)
         h = f * math.cos(self.angle)
         elbow_x = g * (1.0 - math.cos(rotation))
-        elbow_y = wy - h * math.sin(rotation)
+        elbow_y = wy - h * (1.0 - math.cos(rotation))
         elbow_z = f * math.sin(rotation)
         y = [elbow_x, elbow_y, elbow_z]
         y_hat = unit_vector(y)
         z = [(wx - elbow_x), (wy - elbow_y), (wz - elbow_z)]
         z_hat = unit_vector(z)
         return y_hat, z_hat
-
-    def point_position(self, nose_y, nose_angle):
-        """Calculate point position from gouge nose position and angle.
-
-        Assume point is centered and jig upright when on
-        gouge nose so that we will have a symmetric
-        grind. We thus do not consider x coordinates, just a +ve z
-        and a -ve y.
-        """
-        pass
