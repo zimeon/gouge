@@ -317,7 +317,7 @@ class Gouge(object):
 class GrindingJig(object):
     """Model for a gouge grinding jig."""
 
-    def __init__(self, nose_angle=math.radians(50.0)):
+    def __init__(self, nose_angle=math.radians(50.0), setup=None):
         """Initialize GrindingJig object.
 
         Properties:
@@ -326,8 +326,12 @@ class GrindingJig(object):
         - nose_angle -- nose angle on gouge which is the grinding
             wheel tangent when the jig is upright/centered
         """
-        self.length = 6.0                # point to gouge tip
-        self.angle = math.radians(70.0)  # offset angle of bar/flute
+        if setup == 'thompson':
+            self.length = 9.37
+            self.angle = math.radians(33.7)
+        else:
+            self.length = 9.0                # point to gouge tip
+            self.angle = math.radians(40.0)  # offset angle of bar/flute
         self.nose_angle = nose_angle     # nose angle on gouge (radians)
 
     def grinding_wheel_normal(self):
