@@ -12,9 +12,9 @@ def format_inches(x, pos=None):
         x *= -1.0
     inches = int(x)
     if (abs(x - inches) < 0.0001):
-        return("%s%d\"" % (sign, inches))
+        return "%s%d\"" % (sign, inches)
     else:
-        return("%s%.3f\"" % (sign, x))
+        return "%s%.3f\"" % (sign, x)
 
 
 def format_feet_inches(x, pos=None):
@@ -29,9 +29,9 @@ def format_feet_inches(x, pos=None):
     feet = x // 12
     inches = x - (12.0 * feet)
     if (abs(x - (feet * 12.0 + int(inches))) < 0.0001):
-        return("%s%d'%d\"" % (sign, feet, int(inches)))
+        return "%s%d'%d\"" % (sign, feet, int(inches))
     else:
-        return("%s%d'%.3f\"" % (sign, feet, inches))
+        return "%s%d'%.3f\"" % (sign, feet, inches)
 
 
 def fill_range(xx, gap=1.0):
@@ -48,20 +48,20 @@ def fill_range(xx, gap=1.0):
                 x2.append(last_x)
         x2.append(x)
         last_x = x
-    return(x2)
+    return x2
 
 
 def round_up(x, tolerance=0.001):
     """Round up to the nearest integer, given a certain tolerance."""
     if (x >= 0.0):
-        return(int(x + 1.0 - tolerance))
+        return int(x + 1.0 - tolerance)
     else:
-        return(int(x - tolerance))
+        return int(x - tolerance)
 
 
 def round_down(x, tolerance=0.001):
     """Round down to the nearest integer, given a certain tolerance."""
     if (x >= 0.0):
-        return(int(x + tolerance))
+        return int(x + tolerance)
     else:
-        return(-int(-x + 1.0 - tolerance))
+        return -int(-x + 1.0 - tolerance)

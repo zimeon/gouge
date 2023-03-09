@@ -10,6 +10,7 @@ import sys
 
 from util import format_inches, format_feet_inches, fill_range, round_up, round_down
 
+
 def select_projection(points, proj):
     """Select coordinate sets for given projection.
 
@@ -95,10 +96,9 @@ class Plotter(object):
         # [length profile]  [end view]
         # [  plan view   ]
         #
-        #plt_w = self.gouge.bar_diameter * 1.5
-        #plt_l = self.gouge.bar_diameter * self.bar_length
+        # plt_w = self.gouge.bar_diameter * 1.5
+        # plt_l = self.gouge.bar_diameter * self.bar_length
         gs = gridspec.GridSpec(2, 2)
-        #,
         #                       width_ratios=[plt_l, plt_w],
         #                       height_ratios=[plt_w, plt_w])
         self.ax_profile_view = self.fig.add_subplot(gs[0])

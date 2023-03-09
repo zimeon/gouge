@@ -50,9 +50,7 @@ class GrindingJig(object):
         return y, z
 
     def tool_rotation_matrix(self, rotation=0.0):
-        """Matrix to rotate tool coordinates to jig/wheel coords.
-
-        """
+        """Matrix to rotate tool coordinates to jig/wheel coords."""
         y, z = self.tool_vectors(rotation)
         y_hat = unit_vector(y)
         z_hat = unit_vector(z)
@@ -62,4 +60,4 @@ class GrindingJig(object):
         # logging.info("   y_hat, |y_hat| = %s, %.5f" % (str(y_hat), numpy.linalg.norm(y_hat)))
         # logging.info("   z_hat, |z_hat| = %s, %.5f" % (str(z_hat), numpy.linalg.norm(z_hat)))
         # logging.info("   y_hat.z_hat = %.5f" % (numpy.dot(y_hat, z_hat)))
-        return numpy.matrix([x_hat, y_hat, z_hat])  #.transpose()
+        return numpy.matrix([x_hat, y_hat, z_hat])  # .transpose()

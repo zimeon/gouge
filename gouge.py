@@ -57,7 +57,7 @@ class Gouge(object):
 
     @property
     def wheel_radius(self):
-        """Radius of grinding wheel."""
+        """Return radius of grinding wheel."""
         return self.wheel_diameter / 2.0
 
     def set_channel_parabola(self):
@@ -135,7 +135,7 @@ class Gouge(object):
         return bx, by, bz
 
     def cutting_edge_points(self, half=False):
-        """Points defining the cutting edge curve.
+        """Calculate points defining the cutting edge curve.
 
         This is the curve of the cutting edge. Looking in
         x,y (end view) it follows the channel. Looking in
@@ -233,10 +233,10 @@ class Gouge(object):
             a_for_min = 999.0
             for a in numpy.linspace(0, -120.0, 500):
                 r = jig.tool_rotation_matrix(rotation=math.radians(a))
-                #logging.info(" r = %s" % str(r))
+                # logging.info(" r = %s" % str(r))
                 # Get grinding wheel normal in tool coords
                 gwn = (jig.grinding_wheel_normal() * r).transpose()
-                #logging.info(" gwn = %s" % str(gwn))
+                # logging.info(" gwn = %s" % str(gwn))
                 # Is edge in grinding wheel plane?
                 dot = numpy.dot(edge, gwn)
                 if abs(dot) < abs(min_dot):
@@ -259,6 +259,7 @@ class Gouge(object):
     def grinding_curve_from_point(self,
                                   ex, ey, ez,
                                   wcx, wcy, wcz):
+        """Calculate grinding wheel curve from point on edge."""
         max_angle_change = self.bar_diameter / self.wheel_radius
         gx, gy, gz = [ex], [ey], [ez]
         r = self.bar_radius
