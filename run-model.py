@@ -33,10 +33,10 @@ else:
 gouge.solve()
 
 # Draw picture...
-fig = plt.figure(figsize=(15, 9))
+fig = plt.figure(figsize=(15, 9), layout="constrained")
 plotter = Plotter(fig=fig, gouge=gouge)
 
 # Set up interactive mode
 plotter.make_plot()
-setup_ui(fig, plotter)
+#setup_ui(fig, plotter)
 plt.show()

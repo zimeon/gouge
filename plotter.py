@@ -8,7 +8,7 @@ from matplotlib.ticker import FuncFormatter, MultipleLocator
 import logging
 import sys
 
-from util import format_inches, format_feet_inches, fill_range, round_up, round_down
+from util import format_inches
 
 
 def select_projection(points, proj):
@@ -62,9 +62,6 @@ class Plotter(object):
         else:
             self.fig = fig
         self.gouge = gouge
-        self.view = 'orthographic'
-        self.station = 0
-        self.selected = None
         self.bar_length = 1.0
         # Colors
         self.outline_color = "blue"
@@ -83,30 +80,38 @@ class Plotter(object):
         """
         self.gouge.solve()
         self.fig.clear()
-        self.draw_orthographic()
+        self.draw_third_angle()
         self.fig.canvas.draw()
 
-    def draw_orthographic(self):
-        """Set up and orthographic set of plots."""
+    def draw_third_angle(self):
+        """Set up and third angle set of projections."""
         logging.info('draw_orthograpic')
         #
         # Construct 2x2 grid with plots organized in
-        # orthographic projection
+        # third_angle projection
         #
-        # [length profile]  [end view]
-        # [  plan view   ]
+        # [ plan view    gs[0]]  (would be gs[1])
+        # [ profile view gs[2]]  [end view gs[3]]
         #
-        # plt_w = self.gouge.bar_diameter * 1.5
-        # plt_l = self.gouge.bar_diameter * self.bar_length
-        gs = gridspec.GridSpec(2, 2)
-        #                       width_ratios=[plt_l, plt_w],
-        #                       height_ratios=[plt_w, plt_w])
-        self.ax_profile_view = self.fig.add_subplot(gs[0])
-        self.ax_end_view = self.fig.add_subplot(gs[1])
-        self.ax_plan_view = self.fig.add_subplot(gs[2])
+        gs = self.fig.add_gridspec(ncols=2, nrows=2)
+        #self.fig.suptitle('Bowl Gouge Shape')
+        # Profile view (top left)
+        self.ax_profile_view = self.fig.add_subplot(gs[2], aspect='equal')
+        self.ax_profile_view.xaxis.set_major_locator(MultipleLocator(0.5))
+        self.ax_profile_view.xaxis.set_major_formatter(FuncFormatter(format_inches))
+        self.ax_profile_view.yaxis.set_major_formatter(FuncFormatter(format_inches))
+        self.ax_profile_view.minorticks_on()
+        # End view (top right)
+        self.ax_end_view = self.fig.add_subplot(gs[3], sharey=self.ax_profile_view, aspect='equal')
+        self.ax_end_view.xaxis.set_major_locator(MultipleLocator(0.5))
+        self.ax_end_view.xaxis.set_major_formatter(FuncFormatter(format_inches))
+        self.ax_end_view.minorticks_on()
+        # Plan view (bottom left)
+        self.ax_plan_view = self.fig.add_subplot(gs[0], sharex=self.ax_profile_view, aspect='equal')
+        self.ax_plan_view.xaxis.set_major_locator(MultipleLocator(0.5))
+        self.ax_plan_view.yaxis.set_major_formatter(FuncFormatter(format_inches))
+        #
         self.plot_data()
-        self.fig.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95,
-                                 wspace=0.07, hspace=0.07)
 
     def plot_data(self):
         """Plot/update all datasets for which axis is not None."""
@@ -142,13 +147,6 @@ class Plotter(object):
             gx, gy, gz = self.gouge.grinding_curve(ex, ey, ez)
             ax.plot(gz, gy, '-', color=self.grinding_line_color)
 
-        # Size and axes
-        ax.set_aspect('equal', 'datalim')
-        ax.xaxis.set_major_locator(MultipleLocator(1.0))
-        ax.minorticks_on()
-        ax.xaxis.set_major_formatter(FuncFormatter(format_inches))
-        ax.yaxis.set_major_formatter(FuncFormatter(format_inches))
-
     def plot_end_view(self, ax):
         """Plot end view gouge on matplotlib axes ax."""
         bx, by, bz = self.gouge.bar_end_curve()
@@ -162,13 +160,6 @@ class Plotter(object):
         for ex, ey, ez in zip(cx, cy, cz):
             gx, gy, gz = self.gouge.grinding_curve(ex, ey, ez)
             ax.plot(gx, gy, '-', color=self.grinding_line_color)
-
-        # Size and axes
-        ax.set_aspect('equal', 'datalim')
-        ax.xaxis.set_major_locator(MultipleLocator(1.0))
-        ax.minorticks_on()
-        ax.xaxis.set_major_formatter(FuncFormatter(format_inches))
-        ax.yaxis.set_major_formatter(FuncFormatter(format_inches))
 
     def plot_plan_view(self, ax):
         """Plot plan view of self.gouge on matplotlib axes ax.
@@ -192,10 +183,3 @@ class Plotter(object):
         xx.extend([-self.gouge.bar_radius, -self.gouge.bar_radius / 2.0])
         ax.plot(zz, xx, '-', color=self.outline_color)
         ax.plot(zz, numpy.multiply(xx, numpy.full_like(xx, -1.0)), '-', color=self.outline_color)
-
-        # Size and axes
-        ax.set_aspect('equal', 'datalim')
-        ax.xaxis.set_major_locator(MultipleLocator(1.0))
-        ax.minorticks_on()
-        ax.xaxis.set_major_formatter(FuncFormatter(format_inches))
-        ax.yaxis.set_major_formatter(FuncFormatter(format_inches))
