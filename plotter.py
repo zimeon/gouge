@@ -78,7 +78,7 @@ class Plotter(object):
         recacl - set True to reset gouge calculations (e.g. if internal settings
             have been altered)
         """
-        self.gouge.solve()
+        # self.gouge.solve()
         self.fig.clear()
         self.draw_third_angle()
         self.fig.canvas.draw()

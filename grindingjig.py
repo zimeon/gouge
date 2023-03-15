@@ -70,18 +70,14 @@ class GrindingJig(object):
         # logging.info("   y_hat, |y_hat| = %s, %.5f" % (str(y_hat), numpy.linalg.norm(y_hat)))
         # logging.info("   z_hat, |z_hat| = %s, %.5f" % (str(z_hat), numpy.linalg.norm(z_hat)))
         # logging.info("   y_hat.z_hat = %.5f" % (numpy.dot(y_hat, z_hat)))
-        return numpy.matrix([x_hat, y_hat, z_hat])  # .transpose()
+        return numpy.array([x_hat, y_hat, z_hat])
 
     def grinding_wheel_normal_in_tool_coords(self, rotation):
         """Normal to grinding wheel surface in tool coordinates."""
         r = self.tool_rotation_matrix(rotation=math.radians(rotation))
-        # logging.info(" r = %s" % str(r))
-        # Get grinding wheel normal in tool coords
-        return (self.grinding_wheel_normal() * r).transpose()
+        return numpy.matmul(r, self.grinding_wheel_normal())
 
     def grinding_wheel_tangent_in_tool_coords(self, rotation):
         """Tangent to grinding wheel surface in tool coordinates."""
         r = self.tool_rotation_matrix(rotation=math.radians(rotation))
-        # logging.info(" r = %s" % str(r))
-        # Get grinding wheel normal in tool coords
-        return (self.grinding_wheel_tangent() * r).transpose()
+        return numpy.matmul(r, self.grinding_wheel_tangent())
