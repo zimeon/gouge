@@ -28,8 +28,18 @@ class GrindingJig(object):
         self.nose_angle = nose_angle     # nose angle on gouge (radians)
 
     def grinding_wheel_normal(self):
-        """Unit vector normal to grinding wheel surface at contact."""
+        """Unit vector normal to the grinding wheel surface at contact.
+
+        In jig/wheel coordinates. Points "up" -- +ve y.
+        """
         return numpy.array([math.cos(self.nose_angle), math.sin(self.nose_angle), 0.0])
+
+    def grinding_wheel_tangent(self):
+        """Unit vector tangent to the grinding wheel surface at contact.
+
+        In jig/wheel coordinates. Points "up" -- +ve y.
+        """
+        return numpy.array([math.sin(self.nose_angle), math.cos(self.nose_angle), 0.0])
 
     def tool_vectors(self, rotation=0.0):
         """Calculate the tool y and z unit vectors at given jig rotation.
@@ -61,3 +71,17 @@ class GrindingJig(object):
         # logging.info("   z_hat, |z_hat| = %s, %.5f" % (str(z_hat), numpy.linalg.norm(z_hat)))
         # logging.info("   y_hat.z_hat = %.5f" % (numpy.dot(y_hat, z_hat)))
         return numpy.matrix([x_hat, y_hat, z_hat])  # .transpose()
+
+    def grinding_wheel_normal_in_tool_coords(self, rotation):
+        """Normal to grinding wheel surface in tool coordinates."""
+        r = self.tool_rotation_matrix(rotation=math.radians(rotation))
+        # logging.info(" r = %s" % str(r))
+        # Get grinding wheel normal in tool coords
+        return (self.grinding_wheel_normal() * r).transpose()
+
+    def grinding_wheel_tangent_in_tool_coords(self, rotation):
+        """Tangent to grinding wheel surface in tool coordinates."""
+        r = self.tool_rotation_matrix(rotation=math.radians(rotation))
+        # logging.info(" r = %s" % str(r))
+        # Get grinding wheel normal in tool coords
+        return (self.grinding_wheel_tangent() * r).transpose()

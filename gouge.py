@@ -34,6 +34,7 @@ class Gouge(object):
         self.units = 'inches'
         # Grinding solutions
         self.spline = None           # spline curve of cutting edge
+        self.grinding_lines = []     # set of sets of points defininf grinding lines
 
     @property
     def bar_radius(self):
@@ -189,7 +190,7 @@ class Gouge(object):
         The set of `number` points (use odd number so there is
         a point at the nose) is approximately eveny distributed
         along the cutting edge, derived from the spline
-        curver self.cutting_edge_curve().
+        curve self.cutting_edge_curve().
 
         `number` refers to the whole curve whether or not `half`
         is set True. In that case there will be `(number + 1) / 2`
@@ -220,7 +221,6 @@ class Gouge(object):
         Or, if we can't, then the suggested curve is impossible
         and raise an exception.
         """
-        cx, cy, cz = [], [], []
         logging.info("Solving for grinding edge...")
         jig = GrindingJig(self.nose_angle)
         for aj in self.cutting_edge_range(half=True):
@@ -228,47 +228,48 @@ class Gouge(object):
             x, y, z = self.spline(aj)
             dx, dy, dz = unit_vector(self.spline(aj, 1))
             edge = numpy.array([dx, dy, dz])
-            logging.info(" edge = %s" % str(edge))
+            logging.info(" edge = %s", str(edge))
             min_dot = 99.0
-            a_for_min = 999.0
+            jig_rotation = 999.0
             for a in numpy.linspace(0, -120.0, 500):
-                r = jig.tool_rotation_matrix(rotation=math.radians(a))
-                # logging.info(" r = %s" % str(r))
-                # Get grinding wheel normal in tool coords
-                gwn = (jig.grinding_wheel_normal() * r).transpose()
+                gwn = jig.grinding_wheel_normal_in_tool_coords(rotation=math.radians(a))
                 # logging.info(" gwn = %s" % str(gwn))
-                # Is edge in grinding wheel plane?
+                # Is edge in grinding wheel plane? Dot product is approx zero
                 dot = numpy.dot(edge, gwn)
                 if abs(dot) < abs(min_dot):
                     min_dot = dot
-                    a_for_min = a
-            logging.info(" rot=%.1f dot = %.4f" % (a_for_min, min_dot))
+                    jig_rotation = a
+            # Have jig rotation angle, now save grinding line
+            logging.info(" rot=%.1f dot = %.4f", jig_rotation, min_dot)
+            continue
+            gwn = jig.grinding_wheel_normal_in_tool_coords(rotation=math.radians(jig_rotation))
+            gwt = jig.grinding_wheel_tangent_in_tool_coords(rotation=math.radians(jig_rotation))
+            gwaxis = numpy.cross(gwn, gwt)
+            edge_point = numpy.array([self.spline(aj)])
+            logging.info("edge point = %s", str(edge_point))
+            self.grinding_line[aj] = self.grinding_curve(edge_point, gwn, gwaxis)
 
-    def grinding_curve(self, ex, ey, ez):
+    def grinding_curve(self, edge_point, gwn, gwaxis):
         """Calculate grinding wheel curve from cutting edge to bar edge.
 
         Starting point on cutting edge is (ex, ey, ez).
+        Grinding wheel surface normal or radius vector is gwn
+        Girnding wheel axis vector is gwaxis
+        Everything is in tool coordinate system
         """
-        # Calculate z and y distances (+ve) of wheel center from origin
-        wcx = 0.0
-        wcy = math.cos(self.nose_angle) * self.wheel_radius - ey
-        wcz = math.sin(self.nose_angle) * self.wheel_radius
-        return self.grinding_curve_from_point(ex, ey, ez,
-                                              wcx, wcy, wcz)
-
-    def grinding_curve_from_point(self,
-                                  ex, ey, ez,
-                                  wcx, wcy, wcz):
-        """Calculate grinding wheel curve from point on edge."""
-        max_angle_change = self.bar_diameter / self.wheel_radius
-        gx, gy, gz = [ex], [ey], [ez]
-        r = self.bar_radius
-        last_x, last_y, last_z = ex, ey, ez
+        # Calculate center of wheel in tool coordinate
+        wheel_center = edge_point - self.wheel_radius * gwn
+        # Translate to have wheel center = (0,0,0)
+        ep = edge_point - wheel_center
+        logging.info("radius=%.1f norm=%.1f", self.wheel_radius, numpy.linalg.norm(ep))
+        max_angle_change = self.bar_diameter / self.wheel_radius  # radians
+        r = self.bar_diameter
+        gx, gy, gz = [], [], []
+        last_x, last_y, last_z = ep
         xx, yy, zz = 0.0, 0.0, 0.0
-        for a in numpy.arange(self.nose_angle, self.nose_angle + max_angle_change, max_angle_change / 20.0):
-            x = ex
-            y = math.cos(a) * self.wheel_radius - wcy
-            z = ez + wcz - math.sin(a) * self.wheel_radius
+        for rot in numpy.linspace(0.0, max_angle_change, 20):
+            # Rotate edge_point about gwaxis at wheel_center by rot radians
+            x, y, z= self.rotate_point(edge_point, wheel_center, gwaxis, rot)
             # Have we gone outside bar?
             if (x * x + y * y) >= r * r:
                 xx, yy, zz = self.bar_intercept(

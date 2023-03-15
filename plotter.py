@@ -138,14 +138,16 @@ class Plotter(object):
         yy.extend(cy)
         ax.plot(zz, yy, '-', color=self.outline_color)
 
-        gx, gy, gz = self.gouge.grinding_curve(cx[-1], cy[-1], cz[-1])
-        zz = [gz[-1], -self.bar_length]
-        yy = [gy[-1], -self.gouge.bar_radius]
-        ax.plot(zz, yy, '-', color=self.outline_color)
+        # Plot nose and lower edge of bar
+        #gx, gy, gz = self.gouge.grinding_curve(cx[-1], cy[-1], cz[-1])
+        #zz = [gz[-1], -self.bar_length]
+        #yy = [gy[-1], -self.gouge.bar_radius]
+        #ax.plot(zz, yy, '-', color=self.outline_color)
+
         # Grinding lines
-        for ex, ey, ez in zip(cx, cy, cz):
-            gx, gy, gz = self.gouge.grinding_curve(ex, ey, ez)
-            ax.plot(gz, gy, '-', color=self.grinding_line_color)
+        #for ex, ey, ez in zip(cx, cy, cz):
+        #    gx, gy, gz = self.gouge.grinding_curve(ex, ey, ez)
+        #    ax.plot(gz, gy, '-', color=self.grinding_line_color)
 
     def plot_end_view(self, ax):
         """Plot end view gouge on matplotlib axes ax."""
@@ -157,9 +159,9 @@ class Plotter(object):
         ax.plot(cx, cy, 'o', color=self.outline_color)
 
         # Grinding lines
-        for ex, ey, ez in zip(cx, cy, cz):
-            gx, gy, gz = self.gouge.grinding_curve(ex, ey, ez)
-            ax.plot(gx, gy, '-', color=self.grinding_line_color)
+        #for ex, ey, ez in zip(cx, cy, cz):
+        #    gx, gy, gz = self.gouge.grinding_curve(ex, ey, ez)
+        #    ax.plot(gx, gy, '-', color=self.grinding_line_color)
 
     def plot_plan_view(self, ax):
         """Plot plan view of self.gouge on matplotlib axes ax.

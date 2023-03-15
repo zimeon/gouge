@@ -4,7 +4,7 @@ import unittest
 from util import fill_range, round_up, round_down
 
 
-class TestLofting(unittest.TestCase):
+class TestUtil(unittest.TestCase):
 
     def test01_fill_range(self):
         self.assertEqual(fill_range([]), [])
