@@ -14,8 +14,6 @@ def rotate_point(point, center, axis, rot):
     """Rotate point about axis at center by rot radians."""
     # Translate point to have coorindinate with origin at center
     p = point - center
-    print("p:")
-    print(p)
     # Use Rodrigues' Rotation to rotate about axis
     #
     # See: https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.from_mrp.html
@@ -24,10 +22,6 @@ def rotate_point(point, center, axis, rot):
     # of rotation (in radians)"
     mrp = unit_vector(axis) * math.tan(rot / 4.0)
     r_mat = Rotation.from_mrp(mrp).as_matrix()
-    print("r_mat:")
-    print(r_mat)
     pp = numpy.matmul(r_mat, p)
-    print("pp:")
-    print(pp)
     # Translate back to original coordinate origin
     return pp + center

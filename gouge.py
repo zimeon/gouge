@@ -5,7 +5,7 @@ import math
 import numpy
 from scipy.interpolate import CubicSpline
 from jig import Jig
-from vector import unit_vector
+from vector import unit_vector, rotate_point
 
 
 class Gouge(object):
@@ -34,7 +34,7 @@ class Gouge(object):
         self.units = 'inches'
         # Grinding solutions
         self.spline = None           # spline curve of cutting edge
-        self.grinding_lines = []     # set of sets of points defininf grinding lines
+        self.grinding_line = {}      # set of sets of points defininf grinding lines
 
     @property
     def bar_radius(self):
@@ -241,11 +241,10 @@ class Gouge(object):
                     jig_rotation = a
             # Have jig rotation angle, now save grinding line
             logging.info(" rot=%.1f dot = %.4f", jig_rotation, min_dot)
-            continue
             gwn = jig.grinding_wheel_normal_in_tool_coords(rotation=math.radians(jig_rotation))
             gwt = jig.grinding_wheel_tangent_in_tool_coords(rotation=math.radians(jig_rotation))
             gwaxis = numpy.cross(gwn, gwt)
-            edge_point = numpy.array([self.spline(aj)])
+            edge_point = numpy.array(self.spline(aj))
             logging.info("edge point = %s", str(edge_point))
             self.grinding_line[aj] = self.grinding_curve(edge_point, gwn, gwaxis)
 
@@ -261,20 +260,22 @@ class Gouge(object):
         wheel_center = edge_point - self.wheel_radius * gwn
         # Translate to have wheel center = (0,0,0)
         ep = edge_point - wheel_center
+        logging.info("ep=%s", ep)
         logging.info("radius=%.1f norm=%.1f", self.wheel_radius, numpy.linalg.norm(ep))
         max_angle_change = self.bar_diameter / self.wheel_radius  # radians
-        r = self.bar_diameter
+        r = self.bar_diameter / 2.0
         gx, gy, gz = [], [], []
         last_x, last_y, last_z = ep
         xx, yy, zz = 0.0, 0.0, 0.0
         for rot in numpy.linspace(0.0, max_angle_change, 20):
             # Rotate edge_point about gwaxis at wheel_center by rot radians
-            x, y, z= self.rotate_point(edge_point, wheel_center, gwaxis, rot)
+            x, y, z= rotate_point(edge_point, wheel_center, gwaxis, rot)
             # Have we gone outside bar?
             if (x * x + y * y) >= r * r:
                 xx, yy, zz = self.bar_intercept(
                     last_x, last_y, last_z,
                     x, y, z)
+                logging.info("bad edge at rot=%.2f", rot)
                 break
             # Still inside bar diameter
             gx.append(x)

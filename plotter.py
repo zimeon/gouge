@@ -130,6 +130,8 @@ class Plotter(object):
 
         Draws the profile along bar top, down cutting edge,
         down ground edge, and then back along the bar.
+
+        The z-axis is horizonatal, y-axis is vertical.
         """
         zz = [-self.bar_length]
         yy = [self.gouge.bar_top_height]
@@ -139,18 +141,21 @@ class Plotter(object):
         ax.plot(zz, yy, '-', color=self.outline_color)
 
         # Plot nose and lower edge of bar
-        #gx, gy, gz = self.gouge.grinding_curve(cx[-1], cy[-1], cz[-1])
-        #zz = [gz[-1], -self.bar_length]
-        #yy = [gy[-1], -self.gouge.bar_radius]
-        #ax.plot(zz, yy, '-', color=self.outline_color)
+        gx, gy, gz = self.gouge.grinding_line[0.0]
+        zz = [gz[-1], -self.bar_length]
+        yy = [gy[-1], -self.gouge.bar_radius]
+        ax.plot(zz, yy, '-', color=self.outline_color)
 
         # Grinding lines
-        #for ex, ey, ez in zip(cx, cy, cz):
-        #    gx, gy, gz = self.gouge.grinding_curve(ex, ey, ez)
-        #    ax.plot(gz, gy, '-', color=self.grinding_line_color)
+        for aj in self.gouge.grinding_line:
+            gx, gy, gz = self.gouge.grinding_line[aj]
+            ax.plot(gz, gy, '-', color=self.grinding_line_color)
 
     def plot_end_view(self, ax):
-        """Plot end view gouge on matplotlib axes ax."""
+        """Plot end view gouge on matplotlib axes ax.
+
+        The x-axis is horizonatal, y-axis is vertical.
+        """
         bx, by, bz = self.gouge.bar_end_curve()
         ax.plot(bx, by, '-', color=self.outline_color)
 
@@ -159,14 +164,14 @@ class Plotter(object):
         ax.plot(cx, cy, 'o', color=self.outline_color)
 
         # Grinding lines
-        #for ex, ey, ez in zip(cx, cy, cz):
-        #    gx, gy, gz = self.gouge.grinding_curve(ex, ey, ez)
-        #    ax.plot(gx, gy, '-', color=self.grinding_line_color)
+        for aj in self.gouge.grinding_line:
+            gx, gy, gz = self.gouge.grinding_line[aj]
+            ax.plot(gx, gy, '-', color=self.grinding_line_color)
 
     def plot_plan_view(self, ax):
         """Plot plan view of self.gouge on matplotlib axes ax.
 
-        In model space this has -z horizontal and +x vertical.
+        The z-axis is horizontal, x-axis is vertical.
         """
         # Top of channel and then curring edge
         zz = [-self.bar_length]
@@ -185,3 +190,8 @@ class Plotter(object):
         xx.extend([-self.gouge.bar_radius, -self.gouge.bar_radius / 2.0])
         ax.plot(zz, xx, '-', color=self.outline_color)
         ax.plot(zz, numpy.multiply(xx, numpy.full_like(xx, -1.0)), '-', color=self.outline_color)
+
+        # Grinding lines
+        for aj in self.gouge.grinding_line:
+            gx, gy, gz = self.gouge.grinding_line[aj]
+            ax.plot(gz, gx, '-', color=self.grinding_line_color)
