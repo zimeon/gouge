@@ -94,7 +94,7 @@ class Plotter(object):
         # [ profile view gs[2]]  [end view gs[3]]
         #
         gs = self.fig.add_gridspec(ncols=2, nrows=2)
-        #self.fig.suptitle('Bowl Gouge Shape')
+        # self.fig.suptitle('Bowl Gouge Shape')
         # Profile view (top left)
         self.ax_profile_view = self.fig.add_subplot(gs[2], aspect='equal')
         self.ax_profile_view.xaxis.set_major_locator(MultipleLocator(0.5))

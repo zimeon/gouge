@@ -69,11 +69,11 @@ class Jig(object):
         y_hat = unit_vector(y)
         z_hat = unit_vector(z)
         x_hat = numpy.cross(y_hat, z_hat)
-        #logging.info("   === jig.rot = %.2f", math.degrees(rotation))
-        #logging.info("   x_hat, |x_hat| = %s, %.5f", str(x_hat), numpy.linalg.norm(x_hat))
-        #logging.info("   y_hat, |y_hat| = %s, %.5f", str(y_hat), numpy.linalg.norm(y_hat))
-        #logging.info("   z_hat, |z_hat| = %s, %.5f", str(z_hat), numpy.linalg.norm(z_hat))
-        #logging.info("   y_hat.z_hat = %.5f", numpy.dot(y_hat, z_hat))
+        # logging.info("   === jig.rot = %.2f", math.degrees(rotation))
+        # logging.info("   x_hat, |x_hat| = %s, %.5f", str(x_hat), numpy.linalg.norm(x_hat))
+        # logging.info("   y_hat, |y_hat| = %s, %.5f", str(y_hat), numpy.linalg.norm(y_hat))
+        # logging.info("   z_hat, |z_hat| = %s, %.5f", str(z_hat), numpy.linalg.norm(z_hat))
+        # logging.info("   y_hat.z_hat = %.5f", numpy.dot(y_hat, z_hat))
         return numpy.array([x_hat, y_hat, z_hat]).transpose()
 
     def grinding_wheel_normal_in_tool_coords(self, rotation):

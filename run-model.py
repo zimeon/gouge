@@ -38,5 +38,4 @@ plotter = Plotter(fig=fig, gouge=gouge)
 
 # Set up interactive mode
 plotter.make_plot()
-#setup_ui(fig, plotter)
 plt.show()

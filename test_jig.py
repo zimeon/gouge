@@ -31,11 +31,11 @@ class TestJig(unittest.TestCase):
         j.angle = math.radians(30.0)
         # Centered, rotation=0.0
         r = j.tool_rotation_matrix(rotation=0.0)
-        npt.assert_allclose(r, numpy.array([[ 0.0, 0.0, 1.0],
-                                            [ 0.0, 1.0, 0.0],
+        npt.assert_allclose(r, numpy.array([[0.0, 0.0, 1.0],
+                                            [0.0, 1.0, 0.0],
                                             [-1.0, 0.0, 0.0]]), atol=0.001)
         # All the way over, rotation=90.0
         r = j.tool_rotation_matrix(rotation=math.radians(90.0))
         npt.assert_allclose(r, numpy.array([[-0.500, 0.433, 0.750],
-                                            [ 0.866, 0.250, 0.433],
-                                            [ 0.000, 0.866,-0.500]]), atol=0.001)
+                                            [0.866, 0.250, 0.433],
+                                            [0.000, 0.866, -0.500]]), atol=0.001)

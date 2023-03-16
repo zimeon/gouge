@@ -69,15 +69,12 @@ class Gouge(object):
         cx, cy = [], []
         r = self.bar_radius
         last_x, last_y = 0.0, 0.0
-        xx, yy = 0.0, 0.0
         for f in numpy.arange(0.0, +1.1, 0.1):
             x = f * r
             y = f * f * r - 0.1 * self.bar_diameter
             # Have we gone outside bar?
             if (x * x + y * y) >= r * r:
-                x, y, z = self.bar_intercept(
-                    last_x, last_y, 0.0,
-                    x, y, 0.0)
+                x, y, z = self.bar_intercept(last_x, last_y, 0.0, x, y, 0.0)
                 # Have intercept add last point on bar edge
                 cx.append(x)
                 cy.append(y)
@@ -223,8 +220,7 @@ class Gouge(object):
         for aj in self.cutting_edge_range(half=True):
             logging.info("=== aj = %f" % aj)
             x, y, z = self.spline(aj)
-            dx, dy, dz = unit_vector(self.spline(aj, 1))
-            edge = numpy.array([dx, dy, dz])
+            edge = unit_vector(self.spline(aj, 1))
             logging.info(" edge = %s", str(edge))
             min_dot = 99.0
             jig_rotation = 999.0
@@ -263,16 +259,12 @@ class Gouge(object):
         r = self.bar_diameter / 2.0
         gx, gy, gz = [], [], []
         last_x, last_y, last_z = ep
-        xx, yy, zz = 0.0, 0.0, 0.0
         for rot in numpy.linspace(0.0, max_angle_change, 20):
             # Rotate edge_point about gwaxis at wheel_center by rot radians
-            x, y, z= rotate_point(edge_point, wheel_center, gwaxis, rot)
+            x, y, z = rotate_point(edge_point, wheel_center, gwaxis, rot)
             # Have we gone outside bar?
             if (x * x + y * y) >= r * r:
-                x, y, z = self.bar_intercept(
-                    last_x, last_y, last_z,
-                    x, y, z)
-                logging.info("bad edge at rot=%.2f", rot)
+                x, y, z = self.bar_intercept(last_x, last_y, last_z, x, y, z)
                 # Have intercept, add last point
                 gx.append(x)
                 gy.append(y)
@@ -285,6 +277,8 @@ class Gouge(object):
             last_x = x
             last_y = y
             last_z = z
+        else:
+            logging.info("Failed to find bar edge up to rot=%.2f", rot)
         return gx, gy, gz
 
     def bar_intercept(self, x1, y1, z1, x2, y2, z2):
