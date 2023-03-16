@@ -75,21 +75,18 @@ class Gouge(object):
             y = f * f * r - 0.1 * self.bar_diameter
             # Have we gone outside bar?
             if (x * x + y * y) >= r * r:
-                xx, yy, zz = self.bar_intercept(
+                x, y, z = self.bar_intercept(
                     last_x, last_y, 0.0,
                     x, y, 0.0)
+                # Have intercept add last point on bar edge
+                cx.append(x)
+                cy.append(y)
                 break
             # Still inside bar diameter
             cx.append(x)
             cy.append(y)
             last_x = x
             last_y = y
-        # Now have angle, add last point exactly on bar edge
-        self.bar_channel_angle = math.atan2(xx, yy)
-        x = r * math.sin(self.bar_channel_angle)
-        y = r * math.cos(self.bar_channel_angle)
-        cx.append(x)
-        cy.append(y)
         self.channel = cx, cy
 
     def set_profile_flat(self, angle=30.0):
@@ -272,10 +269,14 @@ class Gouge(object):
             x, y, z= rotate_point(edge_point, wheel_center, gwaxis, rot)
             # Have we gone outside bar?
             if (x * x + y * y) >= r * r:
-                xx, yy, zz = self.bar_intercept(
+                x, y, z = self.bar_intercept(
                     last_x, last_y, last_z,
                     x, y, z)
                 logging.info("bad edge at rot=%.2f", rot)
+                # Have intercept, add last point
+                gx.append(x)
+                gy.append(y)
+                gz.append(z)
                 break
             # Still inside bar diameter
             gx.append(x)
@@ -284,15 +285,6 @@ class Gouge(object):
             last_x = x
             last_y = y
             last_z = z
-        # Now have intercept, add last point exactly on bar edge
-        # Now calculate angle of intercept with bar
-        end_angle = math.atan2(xx, yy)
-        x = r * math.sin(end_angle)
-        y = r * math.cos(end_angle)
-        z = zz
-        gx.append(x)
-        gy.append(y)
-        gz.append(z)
         return gx, gy, gz
 
     def bar_intercept(self, x1, y1, z1, x2, y2, z2):
@@ -310,4 +302,9 @@ class Gouge(object):
             z = m * (z2 - z1) + z1
             if (x * x + y * y) >= rsqrd:
                 break
+        # Now have very close to intercept, return point exactly
+        # on bar edge for x and y, with same z as calculated.
+        end_angle = math.atan2(x, y)
+        x = self.bar_radius * math.sin(end_angle)
+        y = self.bar_radius * math.cos(end_angle)
         return x, y, z
