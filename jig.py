@@ -7,11 +7,11 @@ from scipy.interpolate import CubicSpline
 from vector import unit_vector
 
 
-class GrindingJig(object):
+class Jig(object):
     """Model for a gouge grinding jig."""
 
     def __init__(self, nose_angle=math.radians(50.0), setup=None):
-        """Initialize GrindingJig object.
+        """Initialize Jig object.
 
         Properties:
         - length -- point to gouge tip distance in inches
@@ -44,7 +44,8 @@ class GrindingJig(object):
     def tool_vectors(self, rotation=0.0):
         """Calculate the tool y and z unit vectors at given jig rotation.
 
-        Vectors are
+        Rotation is in radians.
+        Vectors are not normalized but define tool y and z directions.
         """
         wx = self.length * math.cos(self.angle)
         wy = self.length * math.sin(self.angle)
@@ -60,24 +61,27 @@ class GrindingJig(object):
         return y, z
 
     def tool_rotation_matrix(self, rotation=0.0):
-        """Matrix to rotate tool coordinates to jig/wheel coords."""
+        """Matrix to rotate tool coordinates to jig/wheel coords.
+
+        Rotation is in radians.
+        """
         y, z = self.tool_vectors(rotation)
         y_hat = unit_vector(y)
         z_hat = unit_vector(z)
         x_hat = numpy.cross(y_hat, z_hat)
-        # logging.info("   === jig.rot = %.1f" % math.degrees(rotation))
-        # logging.info("   x_hat, |x_hat| = %s, %.5f" % (str(x_hat), numpy.linalg.norm(x_hat)))
-        # logging.info("   y_hat, |y_hat| = %s, %.5f" % (str(y_hat), numpy.linalg.norm(y_hat)))
-        # logging.info("   z_hat, |z_hat| = %s, %.5f" % (str(z_hat), numpy.linalg.norm(z_hat)))
-        # logging.info("   y_hat.z_hat = %.5f" % (numpy.dot(y_hat, z_hat)))
-        return numpy.array([x_hat, y_hat, z_hat])
+        #logging.info("   === jig.rot = %.2f", math.degrees(rotation))
+        #logging.info("   x_hat, |x_hat| = %s, %.5f", str(x_hat), numpy.linalg.norm(x_hat))
+        #logging.info("   y_hat, |y_hat| = %s, %.5f", str(y_hat), numpy.linalg.norm(y_hat))
+        #logging.info("   z_hat, |z_hat| = %s, %.5f", str(z_hat), numpy.linalg.norm(z_hat))
+        #logging.info("   y_hat.z_hat = %.5f", numpy.dot(y_hat, z_hat))
+        return numpy.array([x_hat, y_hat, z_hat]).transpose()
 
     def grinding_wheel_normal_in_tool_coords(self, rotation):
         """Normal to grinding wheel surface in tool coordinates."""
-        r = self.tool_rotation_matrix(rotation=math.radians(rotation))
+        r = self.tool_rotation_matrix(rotation)
         return numpy.matmul(r, self.grinding_wheel_normal())
 
     def grinding_wheel_tangent_in_tool_coords(self, rotation):
         """Tangent to grinding wheel surface in tool coordinates."""
-        r = self.tool_rotation_matrix(rotation=math.radians(rotation))
+        r = self.tool_rotation_matrix(rotation)
         return numpy.matmul(r, self.grinding_wheel_tangent())

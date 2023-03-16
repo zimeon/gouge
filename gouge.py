@@ -4,7 +4,7 @@ import logging
 import math
 import numpy
 from scipy.interpolate import CubicSpline
-from grindingjig import GrindingJig
+from jig import Jig
 from vector import unit_vector
 
 
@@ -222,7 +222,7 @@ class Gouge(object):
         and raise an exception.
         """
         logging.info("Solving for grinding edge...")
-        jig = GrindingJig(self.nose_angle)
+        jig = Jig(self.nose_angle)
         for aj in self.cutting_edge_range(half=True):
             logging.info("=== aj = %f" % aj)
             x, y, z = self.spline(aj)
