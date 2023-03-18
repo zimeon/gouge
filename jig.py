@@ -30,16 +30,16 @@ class Jig(object):
     def grinding_wheel_normal(self):
         """Unit vector normal to the grinding wheel surface at contact.
 
-        In jig/wheel coordinates. Points "up" -- +ve y.
+        In jig/wheel coordinates. Points "up" -- -ve x, +ve y.
         """
-        return numpy.array([math.cos(self.nose_angle), math.sin(self.nose_angle), 0.0])
+        return numpy.array([-math.sin(self.nose_angle), math.cos(self.nose_angle), 0.0])
 
     def grinding_wheel_tangent(self):
-        """Unit vector tangent to the grinding wheel surface at contact.
+        """Unit vector tangent to the grinding wheel curve at contact.
 
-        In jig/wheel coordinates. Points "up" -- +ve y.
+        In jig/wheel coordinates. Points "up" -- +ve x, +ve y.
         """
-        return numpy.array([math.sin(self.nose_angle), math.cos(self.nose_angle), 0.0])
+        return numpy.array([math.cos(self.nose_angle), math.sin(self.nose_angle), 0.0])
 
     def tool_vectors(self, rotation=0.0):
         """Calculate the tool y and z unit vectors at given jig rotation.
@@ -61,14 +61,15 @@ class Jig(object):
         return y, z
 
     def tool_rotation_matrix(self, rotation=0.0):
-        """Matrix to rotate tool coordinates to jig/wheel coords.
+        """Matrix to rotate a vector in tool coordinates to jig/wheel coords.
 
-        Rotation is in radians.
+        Rotation is in radians. This is just a rotation and cannot not deal
+        with the translation for a point.
         """
         y, z = self.tool_vectors(rotation)
         y_hat = unit_vector(y)
         z_hat = unit_vector(z)
-        x_hat = numpy.cross(y_hat, z_hat)
+        x_hat = -numpy.cross(y_hat, z_hat)
         # logging.info("   === jig.rot = %.2f", math.degrees(rotation))
         # logging.info("   x_hat, |x_hat| = %s, %.5f", str(x_hat), numpy.linalg.norm(x_hat))
         # logging.info("   y_hat, |y_hat| = %s, %.5f", str(y_hat), numpy.linalg.norm(y_hat))
@@ -76,12 +77,10 @@ class Jig(object):
         # logging.info("   y_hat.z_hat = %.5f", numpy.dot(y_hat, z_hat))
         return numpy.array([x_hat, y_hat, z_hat]).transpose()
 
-    def grinding_wheel_normal_in_tool_coords(self, rotation):
-        """Normal to grinding wheel surface in tool coordinates."""
-        r = self.tool_rotation_matrix(rotation)
-        return numpy.matmul(r, self.grinding_wheel_normal())
+    def to_tool_coords(self, vector, rotation):
+        """Rotate vector in jig/wheel coordinates to tool coordiates.
 
-    def grinding_wheel_tangent_in_tool_coords(self, rotation):
-        """Tangent to grinding wheel surface in tool coordinates."""
-        r = self.tool_rotation_matrix(rotation)
-        return numpy.matmul(r, self.grinding_wheel_tangent())
+        For case where jig is at given rotation (radians). rotation=0.0
+        is symmetic/stright up-down.
+        """
+        return numpy.matmul(self.tool_rotation_matrix(rotation), vector)

@@ -34,6 +34,10 @@ class Gouge(object):
         self.units = 'inches'
         # Grinding solutions
         self.spline = None           # spline curve of cutting edge
+        self.grinding_edge_point = {}
+        self.grinding_edge_tangent = {}
+        self.grinding_wheel_normal = {}
+        self.grinding_wheel_tangent = {}
         self.grinding_line = {}      # set of sets of points defininf grinding lines
 
     @property
@@ -219,27 +223,33 @@ class Gouge(object):
         jig = Jig(self.nose_angle)
         for aj in self.cutting_edge_range(half=True):
             logging.info("=== aj = %f" % aj)
-            x, y, z = self.spline(aj)
+            edge_point = numpy.array(self.spline(aj))
             edge = unit_vector(self.spline(aj, 1))
             logging.info(" edge = %s", str(edge))
             min_dot = 99.0
             jig_rotation = 999.0
-            for a in numpy.linspace(0, -120.0, 500):
-                gwn = jig.grinding_wheel_normal_in_tool_coords(rotation=math.radians(a))
+            for jig_rot in numpy.linspace(0.0, math.radians(-120.0), 500):
+                gwn = jig.to_tool_coords(jig.grinding_wheel_normal(), rotation=jig_rot)
                 # logging.info(" gwn = %s" % str(gwn))
                 # Is edge in grinding wheel plane? Dot product is approx zero
                 dot = numpy.dot(edge, gwn)
                 if abs(dot) < abs(min_dot):
                     min_dot = dot
-                    jig_rotation = a
+                    jig_rotation = jig_rot
             # Have jig rotation angle, now save grinding line
-            logging.info(" rot=%.1f dot = %.4f", jig_rotation, min_dot)
-            gwn = jig.grinding_wheel_normal_in_tool_coords(rotation=math.radians(jig_rotation))
-            gwt = jig.grinding_wheel_tangent_in_tool_coords(rotation=math.radians(jig_rotation))
-            gwaxis = numpy.cross(gwn, gwt)
-            edge_point = numpy.array(self.spline(aj))
-            logging.info("edge point = %s", str(edge_point))
-            self.grinding_line[aj] = self.grinding_curve(edge_point, gwn, gwaxis)
+            if min_dot > 0.01:
+                logging.info(" FAILED rot=%.1f dot = %.4f", math.degrees(jig_rotation), min_dot)
+            else:
+                logging.info(" SOLVED rot=%.1f dot = %.4f", math.degrees(jig_rotation), min_dot)
+                gwn = jig.to_tool_coords(jig.grinding_wheel_normal(), rotation=jig_rotation)
+                gwt = jig.to_tool_coords(jig.grinding_wheel_tangent(), rotation=jig_rotation)
+                self.grinding_edge_point[aj] = edge_point
+                self.grinding_edge_tangent[aj] = edge
+                self.grinding_wheel_normal[aj] = gwn
+                self.grinding_wheel_tangent[aj] = gwt
+                gwaxis = numpy.cross(gwn, gwt)
+                logging.info("edge point = %s", str(edge_point))
+                self.grinding_line[aj] = self.grinding_curve(edge_point, gwn, gwaxis)
 
     def grinding_curve(self, edge_point, gwn, gwaxis):
         """Calculate grinding wheel curve from cutting edge to bar edge.
@@ -251,15 +261,12 @@ class Gouge(object):
         """
         # Calculate center of wheel in tool coordinate
         wheel_center = edge_point - self.wheel_radius * gwn
-        # Translate to have wheel center = (0,0,0)
-        ep = edge_point - wheel_center
-        logging.info("ep=%s", ep)
-        logging.info("radius=%.1f norm=%.1f", self.wheel_radius, numpy.linalg.norm(ep))
-        max_angle_change = self.bar_diameter / self.wheel_radius  # radians
+        logging.info("Wheel center = %s", wheel_center)
+        max_angle_change = self.bar_diameter * 1.5 / self.wheel_radius  # radians
         r = self.bar_diameter / 2.0
         gx, gy, gz = [], [], []
-        last_x, last_y, last_z = ep
-        for rot in numpy.linspace(0.0, max_angle_change, 20):
+        last_x, last_y, last_z = edge_point
+        for rot in numpy.linspace(0.0, -max_angle_change, 20):
             # Rotate edge_point about gwaxis at wheel_center by rot radians
             x, y, z = rotate_point(edge_point, wheel_center, gwaxis, rot)
             # Have we gone outside bar?

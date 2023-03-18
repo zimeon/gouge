@@ -146,10 +146,8 @@ class Plotter(object):
         yy = [gy[-1], -self.gouge.bar_radius]
         ax.plot(zz, yy, '-', color=self.outline_color)
 
-        # Grinding lines
-        for aj in self.gouge.grinding_line:
-            gx, gy, gz = self.gouge.grinding_line[aj]
-            ax.plot(gz, gy, '-', color=self.grinding_line_color)
+        self.draw_grinding_edge_arrows(ax, 2, 1)
+        self.draw_grinding_lines(ax, 2, 1)
 
     def plot_end_view(self, ax):
         """Plot end view gouge on matplotlib axes ax.
@@ -163,10 +161,8 @@ class Plotter(object):
         ax.plot(cx, cy, '-', color="red")
         ax.plot(cx, cy, 'o', color=self.outline_color)
 
-        # Grinding lines
-        for aj in self.gouge.grinding_line:
-            gx, gy, gz = self.gouge.grinding_line[aj]
-            ax.plot(gx, gy, '-', color=self.grinding_line_color)
+        self.draw_grinding_edge_arrows(ax, 0, 1)
+        self.draw_grinding_lines(ax, 0, 1)
 
     def plot_plan_view(self, ax):
         """Plot plan view of self.gouge on matplotlib axes ax.
@@ -191,7 +187,28 @@ class Plotter(object):
         ax.plot(zz, xx, '-', color=self.outline_color)
         ax.plot(zz, numpy.multiply(xx, numpy.full_like(xx, -1.0)), '-', color=self.outline_color)
 
-        # Grinding lines
+        self.draw_grinding_edge_arrows(ax, 2, 0)
+        self.draw_grinding_lines(ax, 2, 0)
+
+    def draw_grinding_edge_arrows(self, ax, x_index=0, y_index=1, length=0.05):
+        """Draw grinding edge normals."""
         for aj in self.gouge.grinding_line:
-            gx, gy, gz = self.gouge.grinding_line[aj]
-            ax.plot(gz, gx, '-', color=self.grinding_line_color)
+            ep = self.gouge.grinding_edge_point[aj]
+            et = self.gouge.grinding_edge_tangent[aj]
+            ax.arrow(ep[x_index], ep[y_index],
+                     et[x_index] * length * 0.5, et[y_index] * length * 0.5,
+                     color="cyan", head_width=0.01)
+            gwn = self.gouge.grinding_wheel_normal[aj]
+            ax.arrow(ep[x_index], ep[y_index],
+                     gwn[x_index] * length, gwn[y_index] * length,
+                     color="orange", head_width=0.01)
+            gwt = self.gouge.grinding_wheel_tangent[aj]
+            ax.arrow(ep[x_index], ep[y_index],
+                     gwt[x_index] * length, gwt[y_index] * length,
+                     color="brown", head_width=0.01)
+
+    def draw_grinding_lines(self, ax, x_index=0, y_index=1):
+        """Draw grinding lines."""
+        for aj in self.gouge.grinding_line:
+            points = list(self.gouge.grinding_line[aj])
+            ax.plot(points[x_index], points[y_index], '-', color=self.grinding_line_color)
