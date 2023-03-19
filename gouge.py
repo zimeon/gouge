@@ -233,8 +233,8 @@ class Gouge(object):
                 # logging.info(" gwn = %s" % str(gwn))
                 # Is edge in grinding wheel plane? Dot product is approx zero
                 dot = numpy.dot(edge, gwn)
-                if abs(dot) < abs(min_dot):
-                    min_dot = dot
+                if abs(dot) < min_dot:
+                    min_dot = abs(dot)
                     jig_rotation = jig_rot
             # Have jig rotation angle, now save grinding line
             if min_dot > 0.01:

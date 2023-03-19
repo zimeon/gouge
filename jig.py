@@ -18,6 +18,11 @@ class Jig(object):
         - angle -- offset angle in radians
         - nose_angle -- nose angle on gouge which is the grinding
             wheel tangent when the jig is upright/centered
+
+        Jig coordinate system has tip of jig at 0,0,0. With x perpendicular
+        to the jig when centered (thus x=0 for tip, elbow, wheel contact and
+        wheel center); y is up; and z is from tip to tool to wheel center. This
+        is the same axes directions as the tool when the tool is centered.
         """
         if setup == 'thompson':
             self.length = 9.37
@@ -30,51 +35,44 @@ class Jig(object):
     def grinding_wheel_normal(self):
         """Unit vector normal to the grinding wheel surface at contact.
 
-        In jig/wheel coordinates. Points "up" -- -ve x, +ve y.
+        In jig/wheel coordinates. Points "up" -- 0 x, +ve y, -ve z.
         """
-        return numpy.array([-math.sin(self.nose_angle), math.cos(self.nose_angle), 0.0])
+        return numpy.array([0.0, math.cos(self.nose_angle), -math.sin(self.nose_angle)])
 
     def grinding_wheel_tangent(self):
         """Unit vector tangent to the grinding wheel curve at contact.
 
-        In jig/wheel coordinates. Points "up" -- +ve x, +ve y.
+        In jig/wheel coordinates. Points "up" -- 0 x, +ve y, +ve z.
         """
-        return numpy.array([math.cos(self.nose_angle), math.sin(self.nose_angle), 0.0])
+        return numpy.array([0.0, math.sin(self.nose_angle), math.cos(self.nose_angle)])
 
     def tool_vectors(self, rotation=0.0):
         """Calculate the tool y and z unit vectors at given jig rotation.
 
-        Rotation is in radians.
-        Vectors are not normalized but define tool y and z directions.
+        Rotation is in radians. Vectors are not normalized to unit length
+        and define the tool y and z directions.
         """
-        wx = self.length * math.cos(self.angle)
+        wx = 0.0
         wy = self.length * math.sin(self.angle)
-        wz = 0
-        f = wx * math.sin(self.angle)
-        g = f * math.sin(self.angle)
-        h = f * math.cos(self.angle)
-        elbow_x = g * (1.0 - math.cos(rotation))
-        elbow_y = wy - h * (1.0 - math.cos(rotation))
-        elbow_z = f * math.sin(rotation)
-        y = numpy.array([elbow_x, elbow_y, elbow_z])
-        z = numpy.array([(wx - elbow_x), (wy - elbow_y), (wz - elbow_z)])
-        return y, z
+        wz = self.length * math.cos(self.angle)
+        f = wy * math.cos(self.angle)
+        elbow_x = -f * math.sin(rotation)
+        elbow_y = wy * (1.0 - math.cos(self.angle) ** 2.0 * (1.0 - math.cos(rotation)))
+        elbow_z = f * math.sin(self.angle) * (1.0 - math.cos(rotation))
+        tool_y = numpy.array([elbow_x, elbow_y, elbow_z])
+        tool_z = numpy.array([(wx - elbow_x), (wy - elbow_y), (wz - elbow_z)])
+        return unit_vector(tool_y), unit_vector(tool_z)
 
     def tool_rotation_matrix(self, rotation=0.0):
         """Matrix to rotate a vector in tool coordinates to jig/wheel coords.
 
         Rotation is in radians. This is just a rotation and cannot not deal
         with the translation for a point.
+
+        x = y cross z
         """
-        y, z = self.tool_vectors(rotation)
-        y_hat = unit_vector(y)
-        z_hat = unit_vector(z)
-        x_hat = -numpy.cross(y_hat, z_hat)
-        # logging.info("   === jig.rot = %.2f", math.degrees(rotation))
-        # logging.info("   x_hat, |x_hat| = %s, %.5f", str(x_hat), numpy.linalg.norm(x_hat))
-        # logging.info("   y_hat, |y_hat| = %s, %.5f", str(y_hat), numpy.linalg.norm(y_hat))
-        # logging.info("   z_hat, |z_hat| = %s, %.5f", str(z_hat), numpy.linalg.norm(z_hat))
-        # logging.info("   y_hat.z_hat = %.5f", numpy.dot(y_hat, z_hat))
+        y_hat, z_hat = self.tool_vectors(rotation)
+        x_hat = numpy.cross(y_hat, z_hat)
         return numpy.array([x_hat, y_hat, z_hat]).transpose()
 
     def to_tool_coords(self, vector, rotation):
