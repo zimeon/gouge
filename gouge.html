@@ -11,47 +11,43 @@
                 <py-config>
                     packages = [
                       "matplotlib"
-                    ]
+                    ],
+                    "fetch": [
+                        {
+                          "files": [
+                            "./gouge.py",
+                            "./plotter.py",
+                            "./user_interface.py",
+                            "./jig.py",
+                            "./uitl.py",
+                            "./vector.py"
+                          ]
+                        }
+                    ],
                     plugins = [
                       "https://pyscript.net/latest/plugins/python/py_tutor.py"
                     ]
                 </py-config>
 
-                <py-script>
-                    import matplotlib.pyplot as plt
-                    import matplotlib.tri as tri
-                    import numpy as np
+<py-script>
+    import matplotlib.pyplot as plt
 
-                    # First create the x and y coordinates of the points.
-                    n_angles = 36
-                    n_radii = 8
-                    min_radius = 0.25
-                    radii = np.linspace(min_radius, 0.95, n_radii)
+    from gouge import Gouge
+    from plotter import Plotter
+    from user_interface import setup_ui
 
-                    angles = np.linspace(0, 2 * np.pi, n_angles, endpoint=False)
-                    angles = np.repeat(angles[..., np.newaxis], n_radii, axis=1)
-                    angles[:, 1::2] += np.pi / n_angles
+    # Build gouge model and solve
+    gouge = Gouge()
+    gouge.set_channel_parabola()
+    gouge.set_profile_flat()
+    gouge.solve()
 
-                    x = (radii * np.cos(angles)).flatten()
-                    y = (radii * np.sin(angles)).flatten()
-                    z = (np.cos(radii) * np.cos(3 * angles)).flatten()
-
-                    # Create the Triangulation; no triangles so Delaunay triangulation created.
-                    triang = tri.Triangulation(x, y)
-
-                    # Mask off unwanted triangles.
-                    triang.set_mask(np.hypot(x[triang.triangles].mean(axis=1),
-                                             y[triang.triangles].mean(axis=1))
-                                    < min_radius)
-
-                    fig1, ax1 = plt.subplots()
-                    ax1.set_aspect('equal')
-                    tpc = ax1.tripcolor(triang, z, shading='flat')
-                    fig1.colorbar(tpc)
-                    ax1.set_title('tripcolor of Delaunay triangulation, flat shading')
-
-                    display(fig1, target="mpl")
-                </py-script>
+    # Draw picture...
+    fig = plt.figure(figsize=(15, 9), layout="constrained")
+    plotter = Plotter(fig=fig, gouge=gouge)
+    plotter.make_plot()
+    display(fig, target="mpl")
+</py-script>
             </py-tutor>
         </section>
     </body>
