@@ -29,7 +29,7 @@ class TestJig(unittest.TestCase):
         j = Jig()
         j.length = 1.0
         j.angle = math.radians(30.0)
-        # Centered, rotation=0.0
+        # Centered, rotation=0.0, identity matrix
         r = j.tool_rotation_matrix(rotation=0.0)
         npt.assert_allclose(r, numpy.array([[1.0, 0.0, 0.0],
                                             [0.0, 1.0, 0.0],
