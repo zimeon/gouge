@@ -27,24 +27,23 @@
                 </py-config>
 
 <py-script>
-    import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
-    from gouge import Gouge
-    from plotter import Plotter
-    from user_interface import setup_ui
+from gouge import Gouge
+from plotter import Plotter
 
-    # Build gouge model and solve
-    gouge = Gouge()
-    gouge.set_channel_parabola()
-    gouge.set_profile_flat()
-    gouge.solve()
+# Build gouge model and solve
+gouge = Gouge()
+gouge.set_channel_parabola()
+gouge.set_profile_flat()
+gouge.solve()
 
-    # Draw picture...
-    fig = plt.figure(figsize=(15, 9), layout="constrained")
-    plotter = Plotter(fig=fig, gouge=gouge)
-    plotter.make_plot()
-    plt.show()
-    display(fig, target="mpl")
+# Draw picture...
+fig = plt.figure(figsize=(15, 9), layout="constrained")
+plotter = Plotter(fig=fig, gouge=gouge)
+plotter.make_plot()
+plt.show()
+display(fig, target="mpl")
 </py-script>
             </py-tutor>
         </section>
