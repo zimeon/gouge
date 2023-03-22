@@ -7,25 +7,23 @@
     <body>
         <section class="pyscript">
             <div id="mpl"></div>
-            <py-tutor>
-                <py-config>
-                    packages = [
-                      "matplotlib",
-                      "scipy"
-                    ]
-                    "fetch" = [ { "files" = [
-                            "./gouge.py",
-                            "./plotter.py",
-                            "./user_interface.py",
-                            "./jig.py",
-                            "./util.py",
-                            "./vector.py" ] }
-                    ]
-                    plugins = [
-                      "https://pyscript.net/latest/plugins/python/py_tutor.py"
-                    ]
-                </py-config>
-
+<py-tutor>
+<py-config>
+    packages = [
+      "matplotlib",
+      "scipy"
+    ]
+    "fetch" = [ { "files" = [
+            "./gouge.py",
+            "./plotter.py",
+            "./jig.py",
+            "./util.py",
+            "./vector.py" ] }
+    ]
+    plugins = [
+      "https://pyscript.net/latest/plugins/python/py_tutor.py"
+    ]
+</py-config>
 <py-script>
 import matplotlib.pyplot as plt
 
@@ -45,7 +43,7 @@ plotter.make_plot()
 plt.show()
 display(fig, target="mpl")
 </py-script>
-            </py-tutor>
+</py-tutor>
         </section>
     </body>
 </html>
