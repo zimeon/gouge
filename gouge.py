@@ -32,13 +32,16 @@ class Gouge(object):
         self.nose_angle = math.radians(50.0)   # degrees
         # Data formatting
         self.units = 'inches'
+        # Parameters for model
+        self.num_points = 33
         # Grinding solutions
-        self.spline = None           # spline curve of cutting edge
+        self.spline = None               # spline curve of cutting edge
         self.grinding_edge_point = {}
         self.grinding_edge_tangent = {}
         self.grinding_wheel_normal = {}
         self.grinding_wheel_tangent = {}
-        self.grinding_line = {}      # set of sets of points defininf grinding lines
+        self.grinding_tail_point = {}
+        self.grinding_line = {}          # set of sets of points defininf grinding lines
 
     @property
     def bar_radius(self):
@@ -108,9 +111,8 @@ class Gouge(object):
             pz.append(z)
         self.profile = py, pz
 
-    def solve(self, num_points=21):
+    def solve(self):
         """Solve model ready for plotting etc.."""
-        self.num_points = 21
         self.cutting_edge_mid_point = (self.num_points - 1) / 2
         self.spline = self.cutting_edge_curve()
         self.solve_grinding_for_edge_points()
@@ -250,6 +252,11 @@ class Gouge(object):
                 gwaxis = numpy.cross(gwn, gwt)
                 logging.info("edge point = %s", str(edge_point))
                 self.grinding_line[aj] = self.grinding_curve(edge_point, gwn, gwaxis)
+                # Extract last point
+                self.grinding_tail_point[aj] = numpy.array([
+                    self.grinding_line[aj][0][-1],
+                    self.grinding_line[aj][1][-1],
+                    self.grinding_line[aj][2][-1]])
 
     def grinding_curve(self, edge_point, gwn, gwaxis):
         """Calculate grinding wheel curve from cutting edge to bar edge.
@@ -286,7 +293,7 @@ class Gouge(object):
             last_z = z
         else:
             logging.info("Failed to find bar edge up to rot=%.2f", rot)
-        return gx, gy, gz
+        return list((gx, gy, gz))
 
     def bar_intercept(self, x1, y1, z1, x2, y2, z2):
         """Calculate intercept with bar surface.

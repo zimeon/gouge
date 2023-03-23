@@ -150,6 +150,7 @@ class Plotter(object):
 
         self.draw_grinding_edge_arrows(ax, 2, 1)
         self.draw_grinding_lines(ax, 2, 1)
+        self.draw_grinding_tail(ax, 2, 1)
 
     def plot_end_view(self, ax):
         """Plot end view gouge on matplotlib axes ax.
@@ -164,14 +165,14 @@ class Plotter(object):
         ax.plot(cx, cy, 'o', color=self.outline_color)
 
         self.draw_grinding_edge_arrows(ax, 0, 1)
-        self.draw_grinding_lines(ax, 0, 1)
+        self.draw_grinding_lines(ax, 0, 1, add_mirror=True)
 
     def plot_plan_view(self, ax):
         """Plot plan view of self.gouge on matplotlib axes ax.
 
         The z-axis is horizontal, x-axis is vertical.
         """
-        # Top of channel and then curring edge
+        # Top of channel and then cutting edge
         zz = [-self.bar_length]
         xx = [-self.gouge.bar_top_width]
         cx, cy, cz = self.gouge.cutting_edge_curve_points()
@@ -182,15 +183,26 @@ class Plotter(object):
         ax.plot(zz, xx, '-', color=self.outline_color, linewidth=2)
 
         # Edge of bar and trailing edge (not all to be seen)
-        zz = [-self.bar_length]
-        xx = [-self.gouge.bar_radius]
-        zz.extend([0.0, 0.0])  # FIXME - need curve
-        xx.extend([-self.gouge.bar_radius, -self.gouge.bar_radius / 2.0])
+        # Find z of widest point, y=0, of trailing edge
+        last_x, last_y, last_z = -self.gouge.bar_radius, 0.0, 0.0
+        mid_z = 0.0
+        for aj in self.gouge.grinding_tail_point:
+            pt = self.gouge.grinding_tail_point[aj]
+            logging.info("pt %s", pt)
+            x, y, z = pt[0], pt[1], pt[2]
+            if y > 0.0:
+                mid_z = -last_y * last_z / (y - last_y) + y * z / (y - last_y)
+                break
+            last_x, last_y, last_z = x, y, z
+        # Sides of bar
+        zz = [-self.bar_length, mid_z]
+        xx = [-self.gouge.bar_radius, -self.gouge.bar_radius]
         ax.plot(zz, xx, '-', color=self.outline_color)
         ax.plot(zz, numpy.multiply(xx, numpy.full_like(xx, -1.0)), '-', color=self.outline_color)
 
         self.draw_grinding_edge_arrows(ax, 2, 0)
-        self.draw_grinding_lines(ax, 2, 0)
+        self.draw_grinding_lines(ax, 2, 0, add_mirror=True)
+        self.draw_grinding_tail(ax, 2, 0, add_mirror=True)
 
     def draw_grinding_edge_arrows(self, ax, x_index=0, y_index=1, length=0.05):
         """Draw grinding edge normals."""
@@ -211,8 +223,38 @@ class Plotter(object):
                      gwt[x_index] * length, gwt[y_index] * length,
                      color="brown", head_width=0.01)
 
-    def draw_grinding_lines(self, ax, x_index=0, y_index=1):
-        """Draw grinding lines."""
+    def draw_grinding_lines(self, ax, x_index=0, y_index=1, add_mirror=False):
+        """Draw grinding lines.
+
+        If add_mirror is true then the other side with x>0 is also drawn.
+        """
         for aj in self.gouge.grinding_line:
-            points = list(self.gouge.grinding_line[aj])
+            points = self.gouge.grinding_line[aj]
             ax.plot(points[x_index], points[y_index], '-', color=self.grinding_line_color)
+        if add_mirror:
+            for aj in self.gouge.grinding_line:
+                points = self.gouge.grinding_line[aj]
+                flip_x = numpy.multiply(points[0], numpy.full_like(points[0], -1.0))
+                points2 = [flip_x, points[1], points[2]]
+                ax.plot(points2[x_index], points2[y_index], '-', color=self.grinding_line_color)
+
+    def draw_grinding_tail(self, ax, x_index=0, y_index=1, add_mirror=False):
+        """Draw grinding tail line.
+
+        If add_mirror is true then the other side with x>0 is also drawn.
+        """
+        px = []
+        py = []
+        mx = []
+        my = []
+        for aj in self.gouge.grinding_tail_point:
+            x = self.gouge.grinding_tail_point[aj][x_index]
+            y = self.gouge.grinding_tail_point[aj][y_index]
+            px.append(x)
+            py.append(y)
+            if (aj != 0.0 and y_index == 0 and add_mirror):
+                mx.append(x)
+                my.append(-y)
+        px.extend(reversed(mx))
+        py.extend(reversed(my))
+        ax.plot(px, py, '-', color="orange")
