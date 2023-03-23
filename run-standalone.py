@@ -3,7 +3,7 @@
 
 from gouge import Gouge
 from plotter import Plotter
-from user_interface import setup_ui
+from standalone_ui import setup_ui
 
 import argparse
 import matplotlib.pyplot as plt
@@ -38,4 +38,5 @@ plotter = Plotter(fig=fig, gouge=gouge)
 
 # Set up interactive mode
 plotter.make_plot()
+setup_ui(fig, plotter)
 plt.show()

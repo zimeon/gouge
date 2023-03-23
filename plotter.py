@@ -70,6 +70,8 @@ class Plotter(object):
         self.ax_profile_view = None
         self.ax_end_view = None
         self.ax_plan_view = None
+        # Control display
+        self.show_grinding_edge_arrows = False
 
     def make_plot(self, reset=False, recalc=False):
         """Create the interactive matplotlib plot.
@@ -192,6 +194,8 @@ class Plotter(object):
 
     def draw_grinding_edge_arrows(self, ax, x_index=0, y_index=1, length=0.05):
         """Draw grinding edge normals."""
+        if not self.show_grinding_edge_arrows:
+            return
         for aj in self.gouge.grinding_line:
             ep = self.gouge.grinding_edge_point[aj]
             et = self.gouge.grinding_edge_tangent[aj]
