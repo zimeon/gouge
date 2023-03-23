@@ -1,10 +1,10 @@
-"""Tests for vector.py."""
+"""Tests for util.py."""
 import unittest
 import math
 import numpy
 import numpy.testing as npt
 
-from vector import unit_vector, rotate_point
+from util import unit_vector, rotate_point
 
 
 class TestVector(unittest.TestCase):

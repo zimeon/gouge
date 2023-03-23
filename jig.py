@@ -4,7 +4,7 @@ import logging
 import math
 import numpy
 from scipy.interpolate import CubicSpline
-from vector import unit_vector
+from util import unit_vector
 
 
 class Jig(object):

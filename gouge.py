@@ -5,7 +5,7 @@ import math
 import numpy
 from scipy.interpolate import CubicSpline
 from jig import Jig
-from vector import unit_vector, rotate_point
+from util import unit_vector, rotate_point
 
 
 class Gouge(object):
