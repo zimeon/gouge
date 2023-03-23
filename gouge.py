@@ -11,7 +11,7 @@ from util import unit_vector, rotate_point
 class Gouge(object):
     """Class to model a gouge and its ground edge."""
 
-    def __init__(self):
+    def __init__(self, nose_angle_degrees=50.0):
         """Initialize Gouge object.
 
         - channel = [x array] [y array] that represents one side
@@ -29,12 +29,17 @@ class Gouge(object):
         self.profile = [], []        # profile of cutting edge
         # Grinding setup
         self.wheel_diameter = 8.0    # inches
-        self.nose_angle = math.radians(50.0)   # degrees
+        self.nose_angle = math.radians(nose_angle_degrees)
+        self.jig_angle = math.radians(40.0)
+        self.jig_length = 9.0        # inches
         # Data formatting
         self.units = 'inches'
         # Parameters for model
         self.num_points = 33
-        # Grinding solutions
+        self.initialize()
+
+    def initialize(self):
+        """Initialize calculations for grinding solution."""
         self.spline = None               # spline curve of cutting edge
         self.grinding_edge_point = {}
         self.grinding_edge_tangent = {}
@@ -113,6 +118,7 @@ class Gouge(object):
 
     def solve(self):
         """Solve model ready for plotting etc.."""
+        self.initialize()
         self.cutting_edge_mid_point = (self.num_points - 1) / 2
         self.spline = self.cutting_edge_curve()
         self.solve_grinding_for_edge_points()
@@ -222,7 +228,8 @@ class Gouge(object):
         and raise an exception.
         """
         logging.info("Solving for grinding edge...")
-        jig = Jig(self.nose_angle)
+        jig = Jig(angle=self.jig_angle, length=self.jig_length,
+                  nose_angle=self.nose_angle)
         for aj in self.cutting_edge_range(half=True):
             logging.info("=== aj = %f" % aj)
             edge_point = numpy.array(self.spline(aj))

@@ -13,6 +13,7 @@ import sys
 import time
 
 p = argparse.ArgumentParser()
+p.add_argument("-n", "--nose-angle", type=float, default=50.0)
 p.add_argument("-v", "--verbosity", action="count", default=0)
 p.add_argument('gouge', nargs='?', default=None)
 args = p.parse_args()
@@ -23,7 +24,7 @@ logging.basicConfig(level=(logging.WARN if args.verbosity == 0 else (
                            logging.DEBUG)))
 
 # Load gouge design
-gouge = Gouge()
+gouge = Gouge(nose_angle_degrees=args.nose_angle)
 if args.gouge is None:
     gouge.set_channel_parabola()
     gouge.set_profile_flat()
@@ -33,8 +34,8 @@ else:
 gouge.solve()
 
 # Draw picture...
-fig = plt.figure(figsize=(15, 9), layout="constrained")
-plotter = Plotter(fig=fig, gouge=gouge)
+fig = plt.figure(figsize=(6, 6), layout="constrained")
+plotter = Plotter(fig=fig, gouge=gouge, view="profile")
 
 # Set up interactive mode
 plotter.make_plot()

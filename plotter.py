@@ -55,7 +55,7 @@ class Point(object):
 class Plotter(object):
     """Class to plot pictures of gouge model."""
 
-    def __init__(self, fig=None, gouge=None):
+    def __init__(self, fig=None, gouge=None, view="third_angle"):
         """Initialize Plotter object."""
         if (fig is None):
             self.fig = plt.figure()
@@ -63,6 +63,8 @@ class Plotter(object):
             self.fig = fig
         self.gouge = gouge
         self.bar_length = 1.0
+        # Layout and view
+        self.view = view
         # Colors
         self.outline_color = "blue"
         self.grinding_line_color = "green"
@@ -80,9 +82,13 @@ class Plotter(object):
         recacl - set True to reset gouge calculations (e.g. if internal settings
             have been altered)
         """
-        # self.gouge.solve()
+        if reset:
+            self.gouge.solve()
         self.fig.clear()
-        self.draw_third_angle()
+        if self.view == 'third_angle':
+            self.draw_third_angle()
+        else:
+            self.draw_one_view()
         self.fig.canvas.draw()
 
     def draw_third_angle(self):
@@ -114,6 +120,29 @@ class Plotter(object):
         self.ax_plan_view.yaxis.set_major_formatter(FuncFormatter(format_inches))
         #
         self.plot_data()
+
+    def draw_one_view(self):
+        """Set up draw one view/projections.
+
+        Supported views are 'profile', 'plan' , 'end'.
+        """
+        logging.info('draw_one_view: %s', self.view)
+
+        # Use gridspec just to keep things similar with third angle plot
+        gs = self.fig.add_gridspec(ncols=1, nrows=1)
+        ax = self.fig.add_subplot(gs[0], aspect='equal')
+        ax.xaxis.set_major_locator(MultipleLocator(0.5))
+        ax.xaxis.set_major_formatter(FuncFormatter(format_inches))
+        ax.yaxis.set_major_formatter(FuncFormatter(format_inches))
+        ax.minorticks_on()
+        if self.view == 'profile':
+            self.plot_profile_view(ax)
+        elif self.view == 'plan':
+            self.plot_plan_view(ax)
+        elif self.view == 'end':
+            self.plot_end_view(ax)
+        else:
+            logging.warn("Unknown view '%s', nothing to plot!", self.view)
 
     def plot_data(self):
         """Plot/update all datasets for which axis is not None."""
