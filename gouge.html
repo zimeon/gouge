@@ -41,8 +41,8 @@ gouge.set_profile_flat()
 gouge.solve()
 
 # Draw picture...
-fig = plt.figure(figsize=(15, 9), layout="constrained")
-plotter = Plotter(fig=fig, gouge=gouge)
+fig = plt.figure(layout="constrained")
+plotter = Plotter(fig=fig, gouge=gouge, view="profile")
 plotter.make_plot()
 plt.show()
 display(fig, target="mpl")
