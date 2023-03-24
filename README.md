@@ -12,11 +12,11 @@ pyscript version that runs in the browser:
 
 This code creates a model of wood turning gouge made from a round section bar with a channel ground in the top for the flute. The coordinate system for the gouge model is defined as follows:
 
-[Gouge Coordinates][!gouge_coords.png]
+![Gouge Coordinates](!gouge_coords.png)
 
 It is this set of coordinates that is used for display of the resulting grinding profile and gouge shape.
 
-A similar right-handed coordinate system is used to model the grinding jig and the grinding wheel. The grinding jig's fixed point (e.g. tip of OneWay Varigrind) and the grinding wheel are taken to be in a fixed relation to each other. The directions of the axes are the same when the gouge is flute up, centered on the wheel. There is a translation of the origin between the tip of the grinding jig (0,0,0 in jig coordinates) and the tip of the gouge (0,0,0 in gouge or tool coordinates).
+A similar right-handed coordinate system is used to model the grinding jig and the grinding wheel. The grinding jig's fixed point (e.g. tip of Oneway Vari-Grind) and the grinding wheel are taken to be in a fixed relation to each other. The directions of the axes are the same when the gouge is flute up, centered on the wheel. There is a translation of the origin between the tip of the grinding jig (0,0,0 in jig coordinates) and the tip of the gouge (0,0,0 in gouge or tool coordinates).
 
 When the grinding jig is rotated there is both a translation and a rotation to convert from jig coordinates to tool coordinates.
 
@@ -33,3 +33,13 @@ The following steps are used in calculation:
 5. The basis for calculating the details of the grind is that, at every point along the cutting edge (intersection of flute and ground surface), the tangent to the cutting edge must lie in the plane of the grinding wheel surface at the point of contact. For each point we find the jig rotation angle that satisfies this condition (vector dot product of edge tangent and normal to grinding wheel surface is zero). If no solution is possible then the jig configuration cannot produce the specified edge shape.
 
 6. Given the jig rotation angle the grinding curve from the edge point to the edge of the tool bar can be calculated but following the shape of the grinding wheel (which has a specified diameter, typically 6" or 8").
+
+## Grinding Jigs
+
+### Oneway Vari-Grind I
+
+See [Oneway description](https://oneway.ca/products-category/sharpening-grinding-jigs/Vari-Grind).
+
+### Ellsworth Jig
+
+This jig has a fixed angle and is designed to position the gouge tip on the wheel 4" vertical and 7" horizontal from the rotation point (ie. 8.06" length and 29.7 degrees in this model). He recommends a 60 degree nose angle. See [David Ellsworth's description](https://ellsworthstudios.com/tools-jigs) and also in his book.
