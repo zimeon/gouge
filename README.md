@@ -12,7 +12,7 @@ pyscript version that runs in the browser:
 
 This code creates a model of wood turning gouge made from a round section bar with a channel ground in the top for the flute. The coordinate system for the gouge model is defined as follows:
 
-![Gouge Coordinates](!gouge_coords.png)
+![Gouge Coordinates](gouge_coords.png)
 
 It is this set of coordinates that is used for display of the resulting grinding profile and gouge shape.
 
