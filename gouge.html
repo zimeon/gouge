@@ -56,6 +56,8 @@ def set_plan():
     print("Setting plan view")
     plotter.view='plan'
     plotter.make_plot()
+    plt.show()
+    display(fig, target="mpl")
 
 def set_end():
     print("Setting end view")
