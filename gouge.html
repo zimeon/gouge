@@ -45,7 +45,7 @@ fig = plt.figure(layout="constrained")
 plotter = Plotter(fig=fig, gouge=gouge, view="profile")
 plotter.make_plot()
 plt.show()
-display(fig, target="mpl")
+display(fig, target="mpl", append=False)
 
 def set_profile():
     print("Setting profile view")
@@ -57,6 +57,7 @@ def set_plan():
     plotter.view='plan'
     plotter.make_plot()
     plt.show()
+    display(fig, target="mpl", append=False)
 
 def set_end():
     print("Setting end view")
