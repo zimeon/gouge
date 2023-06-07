@@ -43,26 +43,27 @@ gouge.solve()
 # Draw picture...
 fig = plt.figure(layout="constrained")
 plotter = Plotter(fig=fig, gouge=gouge, view="profile")
-plotter.make_plot()
-plt.show()
-display(fig, target="mpl", append=False)
+show()
 
 def set_profile():
     print("Setting profile view")
     plotter.view='profile'
-    plotter.make_plot()
+    show()
 
 def set_plan():
     print("Setting plan view")
     plotter.view='plan'
-    plotter.make_plot()
-    plt.show()
-    display(fig, target="mpl", append=False)
+    show()
 
 def set_end():
     print("Setting end view")
     plotter.view='end'
+    show()
+
+def show():
     plotter.make_plot()
+    plt.show()
+    display(fig, target="mpl", append=False)
 
 </py-script>
 </py-tutor>
