@@ -3,9 +3,14 @@
 import logging
 import math
 import numpy
+from scipy.linalg import norm
 from scipy.interpolate import CubicSpline
 from jig import Jig
 from util import unit_vector, rotate_point
+
+
+class NoInterceptException(Exception):
+    """Grinding curve does not intercept bar."""
 
 
 class Gouge(object):
@@ -46,7 +51,7 @@ class Gouge(object):
         self.grinding_wheel_normal = {}
         self.grinding_wheel_tangent = {}
         self.grinding_tail_point = {}
-        self.grinding_line = {}          # set of sets of points defininf grinding lines
+        self.grinding_line = {}          # set of sets of points defining grinding lines
 
     @property
     def bar_radius(self):
@@ -129,7 +134,9 @@ class Gouge(object):
         This is the curve of the end of the outside of the bar,
         the trailing edge of the ground area.
 
-        FIXME - no z info yet!
+        FIXME - no z info yet! This should really be the curve of the trailing
+        edge of the grinding curve plus any that wraps around as the leading
+        egde on the outside of the bar rather than in the flute.
         """
         bx, by, bz = [], [], []
         r = self.bar_radius
@@ -218,12 +225,17 @@ class Gouge(object):
         return cx, cy, cz
 
     def solve_grinding_for_edge_points(self):
-        """Find grinding jig angle at each cutting edge point.
+        """Calculate as set of grinding lines from the edge points.
 
-        We assert that at each point on the cutting edge the vector
-        along the edge must be in the plane of the grinding wheel
-        surface in order to be part of the ground curve. From this
-        we can find the required grinding jig angle at that point.
+        Also, separately populate self.grinding_tail_point with the
+        set of points for the tail edges of the grinding lines on
+        the outside of the bar.
+
+        Start by finding the grinding jig angle at each cutting edge
+        point. We assert that at each point on the cutting edge the
+        vector along the edge must be in the plane of the grinding
+        wheel surface in order to be part of the ground curve. From
+        this we can find the required grinding jig angle at that point.
         Or, if we can't, then the suggested curve is impossible
         and raise an exception.
         """
@@ -264,14 +276,35 @@ class Gouge(object):
                     self.grinding_line[aj][0][-1],
                     self.grinding_line[aj][1][-1],
                     self.grinding_line[aj][2][-1]])
+                # If this is the top of the flute (aj=-1.0) and the grinding
+                # curve has any length, then using the same jig angle extend
+                # the curve until it meets the outside of the bar
+                grinding_length = norm(edge_point - self.grinding_tail_point[aj])
+                logging.info(" length of grinding line = %s", grinding_length)
+                if (aj == -1.0) and (grinding_length > 0.01):
+                    logging.info(" FIXME - calc extra")
+                    self.extended_grinding_surface(edge_point, gwn, gwaxis)
 
-    def grinding_curve(self, edge_point, gwn, gwaxis):
+    def extended_grinding_surface(self, edge_point, gwn, gwaxis):
+        """Calculate the entended grinding curve on the outside of the bar.
+
+        Starting from the edge point at the top of the flute (edge_point) we
+        move in the direction of the grinding wheel axis (gwaxis) until the
+        grinding wheel curve no longer intercepts the bar at all.
+        """
+        pass
+
+    def grinding_curve(self, edge_point, gwn, gwaxis, start_outside_bar=False):
         """Calculate grinding wheel curve from cutting edge to bar edge.
 
         Starting point on cutting edge is (ex, ey, ez).
         Grinding wheel surface normal or radius vector is gwn
         Girnding wheel axis vector is gwaxis
         Everything is in tool coordinate system
+
+        If start_outside_bar if false then we know we are starting outside
+        the bar and may or may not intercept it. If there is no intercept then
+        raise a NoInterceptException.
         """
         # Calculate center of wheel in tool coordinate
         wheel_center = edge_point - self.wheel_radius * gwn
@@ -280,26 +313,40 @@ class Gouge(object):
         r = self.bar_diameter / 2.0
         gx, gy, gz = [], [], []
         last_x, last_y, last_z = edge_point
+        in_bar = not start_outside_bar
         for rot in numpy.linspace(0.0, -max_angle_change, 20):
             # Rotate edge_point about gwaxis at wheel_center by rot radians
             x, y, z = rotate_point(edge_point, wheel_center, gwaxis, rot)
-            # Have we gone outside bar?
+            # Is this point outside of the bar?
             if (x * x + y * y) >= r * r:
-                x, y, z = self.bar_intercept(last_x, last_y, last_z, x, y, z)
-                # Have intercept, add last point
+                if in_bar:
+                    # We have gone outside bar
+                    x, y, z = self.bar_intercept(last_x, last_y, last_z, x, y, z)
+                    # Have intercept, add last point
+                    gx.append(x)
+                    gy.append(y)
+                    gz.append(z)
+                    break
+                else:
+                    # Still outside the bar from a start outside
+                    pass
+            else:
+                if in_bar:
+                    # Newly inside the bar diameter
+                    in_bar = True
+                # Inside bar diameter, record point
                 gx.append(x)
                 gy.append(y)
                 gz.append(z)
-                break
-            # Still inside bar diameter
-            gx.append(x)
-            gy.append(y)
-            gz.append(z)
-            last_x = x
-            last_y = y
-            last_z = z
+                last_x = x
+                last_y = y
+                last_z = z
         else:
-            logging.info("Failed to find bar edge up to rot=%.2f", rot)
+            if in_bar:
+                logging.info("Failed to find trailing bar edge up to rot=%.2f", rot)
+            else:
+                logging.info("Never intercepted with bar")
+                raise NoInterceptException()
         return list((gx, gy, gz))
 
     def bar_intercept(self, x1, y1, z1, x2, y2, z2):

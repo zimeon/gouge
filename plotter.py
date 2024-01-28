@@ -270,7 +270,7 @@ class Plotter(object):
     def draw_grinding_tail(self, ax, x_index=0, y_index=1, add_mirror=False):
         """Draw grinding tail line.
 
-        If add_mirror is true then the other side with x>0 is also drawn.
+        If add_mirror is true then the side with x>0 is also drawn.
         """
         px = []
         py = []
