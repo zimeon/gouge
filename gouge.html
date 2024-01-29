@@ -34,17 +34,6 @@ import matplotlib.pyplot as plt
 from gouge import Gouge
 from plotter import Plotter
 
-# Build gouge model and solve
-gouge = Gouge()
-gouge.set_channel_parabola()
-gouge.set_profile_flat()
-gouge.solve()
-
-# Draw picture...
-fig = plt.figure(layout="constrained")
-plotter = Plotter(fig=fig, gouge=gouge, view="profile")
-show()
-
 def set_profile():
     print("Setting profile view")
     plotter.view='profile'
@@ -65,6 +54,16 @@ def show():
     plt.show()
     display(fig, target="mpl", append=False)
 
+# Build gouge model and solve
+gouge = Gouge()
+gouge.set_channel_parabola()
+gouge.set_profile_flat()
+gouge.solve()
+
+# Draw picture...
+fig = plt.figure(layout="constrained")
+plotter = Plotter(fig=fig, gouge=gouge, view="profile")
+show()
 </py-script>
 </py-tutor>
         </section>
