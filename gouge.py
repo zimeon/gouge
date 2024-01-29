@@ -52,6 +52,8 @@ class Gouge(object):
         self.grinding_wheel_tangent = {}
         self.grinding_tail_point = {}
         self.grinding_line = {}          # set of sets of points defining grinding lines
+        # Extension of grind around bar (not flute)
+        self.grinding_extension_curve = list()
 
     @property
     def bar_radius(self):
@@ -282,19 +284,48 @@ class Gouge(object):
                 grinding_length = norm(edge_point - self.grinding_tail_point[aj])
                 logging.info(" length of grinding line = %s", grinding_length)
                 if (aj == -1.0) and (grinding_length > 0.01):
-                    logging.info(" FIXME - calc extra")
-                    self.extended_grinding_surface(edge_point, gwn, gwaxis)
+                    logging.info(" Calculating extended grinding surface...")
+                    self.extended_grinding_surface(edge_point, self.grinding_tail_point[aj], gwn, gwaxis)
 
-    def extended_grinding_surface(self, edge_point, gwn, gwaxis):
+    def extended_grinding_surface(self, edge_point, tail_point, gwn, gwaxis):
         """Calculate the entended grinding curve on the outside of the bar.
 
         Starting from the edge point at the top of the flute (edge_point) we
         move in the direction of the grinding wheel axis (gwaxis) until the
         grinding wheel curve no longer intercepts the bar at all.
         """
-        pass
+        lead_points = [edge_point]
+        tail_points = [tail_point]
+        for m in numpy.linspace(0.01 * self.bar_radius, 0.5 * self.bar_radius, 500):
+            offset = m * gwaxis
+            logging.info(" EGS: offset = %s", offset)
+            start_point = edge_point - offset
+            logging.info(" EGS: start_point = %s", start_point)
+            try:
+                # Need to do this with greater accuracy (more steps) than the usual
+                # calculation of a gruinding curve to plot, because we are looking for
+                # the intercepts with the bar boundary
+                grinding_line = self.grinding_curve(start_point, gwn, gwaxis, start_outside_bar=True, steps=100)
+            except NoInterceptException as e:
+                logging.info(" EGS: No intercept, edge of BAR!")
+                break
+            # Pick off leading and trailing points of curve
+            lead_points.append(numpy.array([
+                grinding_line[0][0],
+                grinding_line[1][0],
+                grinding_line[2][0]]))
+            tail_points.append(numpy.array([
+                grinding_line[0][-1],
+                grinding_line[1][-1],
+                grinding_line[2][-1]]))
+            logging.info(" EGS: lead_point = %s", lead_points[-1])
+            logging.info(" EGS: tail_point = %s", tail_points[-1])
+        # Now assemble as one line from top of flute to tail curve
+        tail_points.reverse()
+        self.grinding_extension_curve = lead_points + tail_points
+        logging.info("Num extension points = %d", len(self.grinding_extension_curve))
 
-    def grinding_curve(self, edge_point, gwn, gwaxis, start_outside_bar=False):
+    def grinding_curve(self, edge_point, gwn, gwaxis, start_outside_bar=False, steps=20):
         """Calculate grinding wheel curve from cutting edge to bar edge.
 
         Starting point on cutting edge is (ex, ey, ez).
@@ -308,13 +339,13 @@ class Gouge(object):
         """
         # Calculate center of wheel in tool coordinate
         wheel_center = edge_point - self.wheel_radius * gwn
-        logging.info("Wheel center = %s", wheel_center)
+        logging.debug("Wheel center = %s", wheel_center)
         max_angle_change = self.bar_diameter * 1.5 / self.wheel_radius  # radians
         r = self.bar_diameter / 2.0
         gx, gy, gz = [], [], []
         last_x, last_y, last_z = edge_point
         in_bar = not start_outside_bar
-        for rot in numpy.linspace(0.0, -max_angle_change, 20):
+        for rot in numpy.linspace(0.0, -max_angle_change, steps):
             # Rotate edge_point about gwaxis at wheel_center by rot radians
             x, y, z = rotate_point(edge_point, wheel_center, gwaxis, rot)
             # Is this point outside of the bar?
@@ -331,16 +362,17 @@ class Gouge(object):
                     # Still outside the bar from a start outside
                     pass
             else:
-                if in_bar:
-                    # Newly inside the bar diameter
+                if not in_bar:
+                    # Newly inside the bar diameter, find intercept
                     in_bar = True
+                    x, y, z = self.bar_intercept(x, y, z, last_x, last_y, last_z)
                 # Inside bar diameter, record point
                 gx.append(x)
                 gy.append(y)
                 gz.append(z)
-                last_x = x
-                last_y = y
-                last_z = z
+            last_x = x
+            last_y = y
+            last_z = z
         else:
             if in_bar:
                 logging.info("Failed to find trailing bar edge up to rot=%.2f", rot)
@@ -358,10 +390,13 @@ class Gouge(object):
         outside.
         """
         rsqrd = self.bar_radius * self.bar_radius
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1
         for m in numpy.arange(0.0, 1.0, 0.01):
-            x = m * (x2 - x1) + x1
-            y = m * (y2 - y1) + y1
-            z = m * (z2 - z1) + z1
+            x = m * dx + x1
+            y = m * dy + y1
+            z = m * dz + z1
             if (x * x + y * y) >= rsqrd:
                 break
         # Now have very close to intercept, return point exactly

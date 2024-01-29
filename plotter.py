@@ -180,6 +180,7 @@ class Plotter(object):
         self.draw_grinding_edge_arrows(ax, 2, 1)
         self.draw_grinding_lines(ax, 2, 1)
         self.draw_grinding_tail(ax, 2, 1)
+        self.draw_grinding_extension(ax, 2, 1)
 
     def plot_end_view(self, ax):
         """Plot end view gouge on matplotlib axes ax.
@@ -195,6 +196,7 @@ class Plotter(object):
 
         self.draw_grinding_edge_arrows(ax, 0, 1)
         self.draw_grinding_lines(ax, 0, 1, add_mirror=True)
+        self.draw_grinding_extension(ax, 0, 1, add_mirror=True)
 
     def plot_plan_view(self, ax):
         """Plot plan view of self.gouge on matplotlib axes ax.
@@ -232,6 +234,7 @@ class Plotter(object):
         self.draw_grinding_edge_arrows(ax, 2, 0)
         self.draw_grinding_lines(ax, 2, 0, add_mirror=True)
         self.draw_grinding_tail(ax, 2, 0, add_mirror=True)
+        self.draw_grinding_extension(ax, 2, 0, add_mirror=True)
 
     def draw_grinding_edge_arrows(self, ax, x_index=0, y_index=1, length=0.05):
         """Draw grinding edge normals."""
@@ -287,3 +290,24 @@ class Plotter(object):
         px.extend(reversed(mx))
         py.extend(reversed(my))
         ax.plot(px, py, '-', color="orange")
+
+    def draw_grinding_extension(self, ax, x_index=0, y_index=1, add_mirror=False):
+        """Draw grinding extension line.
+
+        If add_mirror is true then the side with x>0 is also drawn.
+        """
+        px = []
+        py = []
+        mx = []
+        my = []
+        for point in self.gouge.grinding_extension_curve:
+            x = point[x_index]
+            y = point[y_index]
+            px.append(x)
+            py.append(y)
+            if y_index == 0 and add_mirror:
+                mx.append(x)
+                my.append(-y)
+        ax.plot(px, py, '-', color="red")
+        if add_mirror:
+            ax.plot(mx, my, '-', color="red")
