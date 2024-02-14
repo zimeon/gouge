@@ -293,10 +293,15 @@ class Gouge(object):
         Starting from the edge point at the top of the flute (edge_point) we
         move in the direction of the grinding wheel axis (gwaxis) until the
         grinding wheel curve no longer intercepts the bar at all.
+
+        At very sharp nose angles (say 30deg) then we need to be able to extend
+        the curve a long way. This case determines the factor 2*bar_radius.
+
+        As we calculate back, we count the number
         """
         lead_points = [edge_point]
         tail_points = [tail_point]
-        for m in numpy.linspace(0.01 * self.bar_radius, 0.5 * self.bar_radius, 500):
+        for m in numpy.linspace(0.01 * self.bar_radius, 2.0 * self.bar_radius, 500):
             offset = m * gwaxis
             logging.info(" EGS: offset = %s", offset)
             start_point = edge_point - offset

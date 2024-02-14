@@ -80,6 +80,9 @@ def setup_ui(fig, plotter):
     p - profile
     l - plan
     e - end
+    Adjust parameters:
+    n - Adjust nose angle (use keys 0-9)
+    j - Adjust jig angle (use keys 0-9)
     Misc:
     q - quit
     """)
