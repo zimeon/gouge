@@ -16,7 +16,7 @@ class NoInterceptException(Exception):
 class Gouge(object):
     """Class to model a gouge and its ground edge."""
 
-    def __init__(self, nose_angle_degrees=50.0):
+    def __init__(self):
         """Initialize Gouge object.
 
         - channel = [x array] [y array] that represents one side
@@ -34,7 +34,7 @@ class Gouge(object):
         self.profile = [], []        # profile of cutting edge
         # Grinding setup
         self.wheel_diameter = 8.0    # inches
-        self.nose_angle = math.radians(nose_angle_degrees)
+        self.set_nose_angle(40.0)    # degrees
         self.jig_angle = math.radians(40.0)
         self.jig_length = 9.0        # inches
         # Data formatting
@@ -81,6 +81,15 @@ class Gouge(object):
         """Return radius of grinding wheel."""
         return self.wheel_diameter / 2.0
 
+    def set_nose_angle(self, nose_angle_degrees):
+        """Set nose angle in degrees
+
+        Internally stored in radians.
+        """
+        if (nose_angle_degrees < 30.0) or (nose_angle_degrees > 90.0):
+            raise Exception('Nose angle out of range 30-90 degrees')
+        self.nose_angle = math.radians(nose_angle_degrees)
+
     def set_channel_parabola(self):
         """Set self.channel to be a parabola.
 
@@ -106,7 +115,7 @@ class Gouge(object):
             last_y = y
         self.channel = cx, cy
 
-    def set_profile_flat(self, angle=30.0):
+    def set_profile_flat(self, angle=40.0):
         """Set up flat wing profile at angle from centerline."""
         # First find bottom of channel
         ybot = self.channel_bottom_y
