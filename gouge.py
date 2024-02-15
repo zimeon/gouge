@@ -54,6 +54,7 @@ class Gouge(object):
         self.grinding_line = {}          # set of sets of points defining grinding lines
         # Extension of grind around bar (not flute)
         self.grinding_extension_curve = list()
+        self.grinding_extension_line = {}
 
     @property
     def bar_radius(self):
@@ -287,6 +288,21 @@ class Gouge(object):
                     logging.info(" Calculating extended grinding surface...")
                     self.extended_grinding_surface(edge_point, self.grinding_tail_point[aj], gwn, gwaxis)
 
+    def distance_between_grinding_lines(self, gwaxis):
+        """Calculate the distance between grinding lines parallel to gwaxis.
+
+        Take the cutting_edge_range which is used to parameterize the cutting
+        edge in steps of one grinding line. Find the real space coordinated of
+        the first two points using self.spline() and then dot product with
+        the gwaxis to get the distance along that direction.
+
+        gwaxis is assumed to be a unit vector.
+        """
+        ajs = self.cutting_edge_range()
+        dst = numpy.dot((self.spline(ajs[1]) - self.spline(ajs[0])), gwaxis)
+        logging.debug(" DBGL: dst = %.3f", dst)
+        return abs(dst)
+
     def extended_grinding_surface(self, edge_point, tail_point, gwn, gwaxis):
         """Calculate the entended grinding curve on the outside of the bar.
 
@@ -297,8 +313,15 @@ class Gouge(object):
         At very sharp nose angles (say 30deg) then we need to be able to extend
         the curve a long way. This case determines the factor 2*bar_radius.
 
-        As we calculate back, we count the number
+        As we calculate back, we count the distance
         """
+        # First calculate the distance between grinding lines on the cutting
+        # edge which will be the step, then
+        step = self.distance_between_grinding_lines(gwaxis)
+        next_line = step
+        # Now work out curve for outside of extended grinding surface and
+        # record additional grinding lines with the same spacing as those
+        # from the cuttting edge.
         lead_points = [edge_point]
         tail_points = [tail_point]
         for m in numpy.linspace(0.01 * self.bar_radius, 2.0 * self.bar_radius, 500):
@@ -325,6 +348,10 @@ class Gouge(object):
                 grinding_line[2][-1]]))
             logging.info(" EGS: lead_point = %s", lead_points[-1])
             logging.info(" EGS: tail_point = %s", tail_points[-1])
+            # Have we got to the next grinding line to record?
+            if m >= next_line:
+                next_line += step
+                self.grinding_extension_line[m] = grinding_line
         # Now assemble as one line from top of flute to tail curve
         tail_points.reverse()
         self.grinding_extension_curve = lead_points + tail_points

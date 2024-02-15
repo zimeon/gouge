@@ -45,11 +45,11 @@ class Point(object):
 
     def distance(self, x, y):
         """Distance of this point from x,y."""
-        return(math.sqrt((self.x - x) ** 2 + (self.y - y) ** 2))
+        return math.sqrt((self.x - x) ** 2 + (self.y - y) ** 2)
 
     def __repr__(self):
         """String representation."""
-        return("Point(%.3f, %.3f, station=%s, mouse_distance=%.3f)" % (self.x, self.y, self.station, self.mouse_distance))
+        return "Point(%.3f, %.3f, station=%s, mouse_distance=%.3f)" % (self.x, self.y, self.station, self.mouse_distance)
 
 
 class Plotter(object):
@@ -292,7 +292,7 @@ class Plotter(object):
         ax.plot(px, py, '-', color="orange")
 
     def draw_grinding_extension(self, ax, x_index=0, y_index=1, add_mirror=False):
-        """Draw grinding extension line.
+        """Draw grinding extension outline and grinding lines.
 
         If add_mirror is true then the side with x>0 is also drawn.
         """
@@ -311,3 +311,13 @@ class Plotter(object):
         ax.plot(px, py, '-', color="red")
         if add_mirror:
             ax.plot(mx, my, '-', color="red")
+        # and now the grinding lines
+        for aj in self.gouge.grinding_extension_line:
+            points = self.gouge.grinding_extension_line[aj]
+            ax.plot(points[x_index], points[y_index], '-', color=self.grinding_line_color)
+        if add_mirror:
+            for aj in self.gouge.grinding_extension_line:
+                points = self.gouge.grinding_extension_line[aj]
+                flip_x = numpy.multiply(points[0], numpy.full_like(points[0], -1.0))
+                points2 = [flip_x, points[1], points[2]]
+                ax.plot(points2[x_index], points2[y_index], '-', color=self.grinding_line_color)
