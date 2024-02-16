@@ -33,7 +33,13 @@ def on_key(event):
         logging.warn("Exiting...")
         sys.exit(0)
     elif (event.key == 'a'):
+        p.show_grinding_edge_angles = not p.show_grinding_edge_angles
+        p.show_grinding_edge_arrows = False
+        logging.warn("Setting show_grinding_edge_angles: %s",
+                     p.show_grinding_edge_angles)
+    elif (event.key == 'w'):
         p.show_grinding_edge_arrows = not p.show_grinding_edge_arrows
+        p.show_grinding_edge_angles = False
         logging.warn("Setting show_grinding_edge_arrows: %s",
                      p.show_grinding_edge_arrows)
     elif (event.key == 'p'):
@@ -67,7 +73,7 @@ def on_key(event):
 
 
 def setup_ui(fig, plotter):
-    """Set-up UI by attaching event handlers to the figure."""
+    """Build UI by attaching event handlers to the figure."""
     global p
     p = plotter
     # Attach event handlers
@@ -75,7 +81,8 @@ def setup_ui(fig, plotter):
     cid2 = fig.canvas.mpl_connect('button_press_event', on_click)
     # Show documentation
     print("""Key commands (while plot window in focus):
-    a - toggle display of cutting edge arrows
+    a - toggle display of cutting edge angles
+    w - toggle display of cutting edge arrows
     Views:
     p - profile
     l - plan

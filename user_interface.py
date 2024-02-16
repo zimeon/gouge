@@ -70,7 +70,7 @@ def on_key(event):
 
 
 def setup_ui(fig, plotter):
-    """Set-up UI by attaching event handlers to the figure."""
+    """Build UI by attaching event handlers to the figure."""
     global p
     p = plotter
     # Attach event handlers

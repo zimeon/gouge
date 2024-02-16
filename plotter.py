@@ -48,7 +48,7 @@ class Point(object):
         return math.sqrt((self.x - x) ** 2 + (self.y - y) ** 2)
 
     def __repr__(self):
-        """String representation."""
+        """Return string representation."""
         return "Point(%.3f, %.3f, station=%s, mouse_distance=%.3f)" % (self.x, self.y, self.station, self.mouse_distance)
 
 
@@ -74,6 +74,7 @@ class Plotter(object):
         self.ax_plan_view = None
         # Control display
         self.show_grinding_edge_arrows = False
+        self.show_grinding_edge_angles = True
 
     def make_plot(self, reset=False, recalc=False):
         """Create the interactive matplotlib plot.
@@ -237,23 +238,44 @@ class Plotter(object):
         self.draw_grinding_extension(ax, 2, 0, add_mirror=True)
 
     def draw_grinding_edge_arrows(self, ax, x_index=0, y_index=1, length=0.05):
-        """Draw grinding edge normals."""
-        if not self.show_grinding_edge_arrows:
-            return
+        """Draw grinding edge arrow and/or angles.
+
+        Display controlled by self.show_grinding_edge_arrows and
+        self.show_grinding_edge_angles
+
+        The cutting edge angle is found using the cross product of
+        unit vectors of the grinding wheel tangent (=grinding line)
+        at the edge and unit vector along the flute (z direction).
+        This magnitude of this is the sine of the cutting edge angle.
+        The value at the nose is a good check.
+        """
         for aj in self.gouge.grinding_line:
             ep = self.gouge.grinding_edge_point[aj]
             et = self.gouge.grinding_edge_tangent[aj]
-            ax.arrow(ep[x_index], ep[y_index],
-                     et[x_index] * length * 0.5, et[y_index] * length * 0.5,
-                     color="cyan", head_width=0.01)
             gwn = self.gouge.grinding_wheel_normal[aj]
-            ax.arrow(ep[x_index], ep[y_index],
-                     gwn[x_index] * length, gwn[y_index] * length,
-                     color="orange", head_width=0.01)
             gwt = self.gouge.grinding_wheel_tangent[aj]
-            ax.arrow(ep[x_index], ep[y_index],
-                     gwt[x_index] * length, gwt[y_index] * length,
-                     color="brown", head_width=0.01)
+            if self.show_grinding_edge_arrows:
+                ax.arrow(ep[x_index], ep[y_index],
+                         et[x_index] * length * 0.5, et[y_index] * length * 0.5,
+                         color="cyan", head_width=0.01)
+                ax.arrow(ep[x_index], ep[y_index],
+                         gwn[x_index] * length, gwn[y_index] * length,
+                         color="orange", head_width=0.01)
+                ax.arrow(ep[x_index], ep[y_index],
+                         gwt[x_index] * length, gwt[y_index] * length,
+                         color="brown", head_width=0.01)
+            if self.show_grinding_edge_angles:
+                # Print out the cutting edge angle
+                angle = numpy.rad2deg(numpy.arcsin(numpy.linalg.norm(numpy.cross(numpy.array([0, 0, 1]), gwt))))
+                logging.info(" GRINDING ANGLE @ %.3f = %.1f degrees", aj, angle)
+                # Make the nose angle bold and stand out a little further than all others
+                separation = 0.035 if aj == 0.0 else 0.015
+                weight = "bold" if aj == 0.0 else "medium"
+                ax.text(ep[x_index] + gwt[x_index] * separation,
+                        ep[y_index] + gwt[y_index] * separation,
+                        ("%d" % int(angle + 0.5)),
+                        fontsize=7, fontweight=weight,
+                        horizontalalignment="center")
 
     def draw_grinding_lines(self, ax, x_index=0, y_index=1, add_mirror=False):
         """Draw grinding lines.
