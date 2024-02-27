@@ -30,7 +30,7 @@ def on_key(event):
     global number_high
     reset = False
     if (event.key == 'q'):
-        logging.warn("Exiting...")
+        logging.warning("Exiting...")
         sys.exit(0)
     elif (event.key == 'a'):
         p.show_grinding_edge_angles = not p.show_grinding_edge_angles
@@ -40,35 +40,35 @@ def on_key(event):
     elif (event.key == 'w'):
         p.show_grinding_edge_arrows = not p.show_grinding_edge_arrows
         p.show_grinding_edge_angles = False
-        logging.warn("Setting show_grinding_edge_arrows: %s",
+        logging.warning("Setting show_grinding_edge_arrows: %s",
                      p.show_grinding_edge_arrows)
     elif (event.key == 'p'):
         p.view = 'profile'
-        logging.warn("Setting profile view")
+        logging.warning("Setting profile view")
     elif (event.key == 'l'):
         p.view = 'plan'
-        logging.warn("Setting plan view")
+        logging.warning("Setting plan view")
     elif (event.key == 'e'):
         p.view = 'end'
-        logging.warn("Setting end view")
+        logging.warning("Setting end view")
     elif (event.key == 'n'):
-        logging.warn("Now adjusting nose angle, 30-80 degrees")
+        logging.warning("Now adjusting nose angle, 30-80 degrees")
         number_mode = 'nose'
         number_low, number_high = 30.0, 80.0
     elif (event.key == 'j'):
         number_mode = 'jig'
         number_low, number_high = 10.0, 50.0
-        logging.warn("Now adjusting jig angle, 10-50 degrees")
+        logging.warning("Now adjusting jig angle, 10-50 degrees")
     elif (event.key in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']):
         value = number_low + int(event.key) / 9.0 * (number_high - number_low)
-        logging.warn("Setting %s angle to %.1f", number_mode, value)
+        logging.warning("Setting %s angle to %.1f", number_mode, value)
         if number_mode == 'nose':
             p.gouge.nose_angle = math.radians(value)
         elif number_mode == 'jig':
             p.gouge.jig_angle = math.radians(value)
         reset = True
     else:
-        logging.warn('Untrapped keypress: ' + str(event.key))
+        logging.warning('Untrapped keypress: ' + str(event.key))
     p.make_plot(reset=reset)
 
 
