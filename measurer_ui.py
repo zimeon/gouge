@@ -24,20 +24,20 @@ def on_key(event):
     #
     elif (event.key == 'down'):
         logging.warning("Moving center down")
-        d.bar_center_y += 0.02
+        d.bar_center_y -= 0.02
     elif (event.key == 'up'):
         logging.warning("Moving center up")
-        d.bar_center_y -= 0.02
+        d.bar_center_y += 0.02
     elif (event.key == 'left'):
         logging.warning("Moving center left")
         d.bar_center_x -= 0.02
     elif (event.key == 'right'):
         logging.warning("Moving center right")
         d.bar_center_x += 0.02
-    elif (event.key == 'b'):
+    elif (event.key == '>'):
         logging.warning("Making bar circle bigger")
         d.bar_radius += 0.01
-    elif (event.key == 's'):
+    elif (event.key == '<'):
         logging.warning("Making bar circle smaller")
         d.bar_radius -= 0.01
     elif (event.key == 'right'):
