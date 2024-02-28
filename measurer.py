@@ -33,24 +33,27 @@ def get_ax_size(fig, ax):
     return width, height
 
 
-def get_extent(fig, ax, image_file, xsize, xpos, ypos):
-    """Places an image on a given axes whilst maintaining its aspect ratio
+def get_extent(fig, ax, img, xsize, xpos, ypos):
+    '''
+    Calculate extent image on a given axes whilst maintaining its aspect ratio
 
     Args:
         fig (matplotlib figure)
         ax (matplotlib axes)
-        image_name (string): file name of image to place on axes
-        xsize(float): size of the x-dimension of object given as fraction of the axes length
-        xpos(float): x-coordinate of image given as fraction of axes
-        ypos(float): y-coordinate of image given as fraction of axes
+        img (numpy.ndarray): image data
+        xsize (float): size of the x-dimension of object given as fraction of the axes length
+        xpos (float): x-coordinate of image given as fraction of axes (0-1)
+        ypos (float): y-coordinate of image given as fraction of axes (0-1)
 
-    """
-    im = numpy.asarray(Image.open(image_file))
+    Returns:
+        xmin, xmax, ymin, ymax (float): min and max x & y specifyin gimage extent in axes coodinates
 
+    '''
+    img_aspect = img.shape[0] / img.shape[1]
     xrange=ax.get_xlim()[1]-ax.get_xlim()[0]
     yrange=ax.get_ylim()[1]-ax.get_ylim()[0]
 
-    ysize=(im.shape[0]/im.shape[1])*(xsize*get_ax_size(fig,ax)[0])/get_ax_size(fig,ax)[1]
+    ysize = xsize * img_aspect * get_ax_size(fig,ax)[0]/get_ax_size(fig,ax)[1]
 
     xsize *= xrange
     ysize *= yrange
@@ -58,10 +61,10 @@ def get_extent(fig, ax, image_file, xsize, xpos, ypos):
     xpos = (xpos*xrange) + ax.get_xlim()[0]
     ypos = (ypos*yrange) + ax.get_ylim()[0]
 
-    return (xpos, xpos+xsize, ypos, ypos+ysize)
+    return xpos, xpos+xsize, ypos, ypos+ysize
 
 
-class Display(object):
+class InteractiveDisplay(object):
     """Class to plot gouge end photo and measure on that."""
 
     def __init__(self, image_file=None):
@@ -72,27 +75,60 @@ class Display(object):
         # Bar cicle. Start with center at middle of image, diameter is 80%
         # of the image width
         (width, height, bits) = self.img.shape
-        self.bar_center_x = width // 2
-        self.bar_center_y = height // 2
-        self.bar_radius = int(min(width, height) * 0.4)
+        self.bar_center_x = 0.0
+        self.bar_center_y = 0.0
+        self.bar_radius = 0.8
+        # Set up plot
+        self.fig, self.ax = plt.subplots()
+        self.lines, = self.ax.plot([],[], 'o')
+        self.ax.set_xlim(-1.0,1.0)
+        self.ax.set_ylim(-1.0,1.0)
+        self.ax.grid()
+        self.ax.set_aspect('equal', adjustable='box')
+        self.fig.canvas.draw()
+        # Image
+        self.x = 0.0
+        self.y = 0.0
+        # Line
+        self.line_x = 1.0
+        # Record elements plotted so we can erase them
+        self.elements = []
 
-    def make_plot(self):
+    def erase(self):
+        """Erase all elements from the plot."""
+        for element in self.elements:
+            print("Removing", element)
+            element.remove()
+        self.elements = []
+
+    def draw(self):
         """Create or refresh the interactive matplotlib plot.
         """
-        #if self.fig is not None:
-        #    self.fig.clear()
-        plt.clf()
-        #self.fig.canvas.draw()
-        x = [200, 500]
-        y = [300, 100]
-        plt.plot(x, y, color="red", linewidth=1)
-        print(self.bar_center_x, self.bar_center_y)
-        circle1 = plt.Circle((self.bar_center_x, self.bar_center_y), self.bar_radius, color='y',linewidth=2, fill=False)
-        plt.gca().add_patch(circle1)
-        self.fig = plt.imshow(self.img)
+        self.erase()
 
+        # Calculate circle for outside of bar
+        bar_circle_x = []
+        bar_circle_y = []
+        for angle in numpy.linspace(0.0, 2.0 * math.pi, 50):
+            bar_circle_x.append(math.cos(angle) * self.bar_radius + self.bar_center_x)
+            bar_circle_y.append(math.sin(angle) * self.bar_radius + self.bar_center_y)
 
+        # And now plot current view
+        extent=get_extent(self.fig, self.ax, self.img, 1.0, self.x,self.y)
+        print(extent)
+        self.elements.append(self.ax.imshow(self.img, aspect='auto', extent=extent,
+                                            interpolation='none', zorder=0))
+        self.elements.append(self.ax.plot([0.0, 1.0], [self.line_x, 0.0],
+                                          color="red", linewidth=1)[0])
+        self.elements.append(self.ax.plot(bar_circle_x, bar_circle_y, color="yellow", linewidth=1)[0])
+        self.ax.set_aspect('equal', adjustable='box') # Have to keep doing this!
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
+    def run(self):
+        for it in range(100):
+            self.draw()
+            print(plt.waitforbuttonpress())
 
 p = argparse.ArgumentParser()
 p.add_argument("-v", "--verbosity", action="count", default=0)
@@ -106,12 +142,7 @@ logging.basicConfig(level=(logging.WARN if args.verbosity == 0 else (
                            logging.DEBUG)))
 
 # Draw picture...
-#plt.ion()  # Interactive mode
-
-#fig = plt.figure(figsize=(6, 6), layout="constrained")
-display = Display(image_file=args.image)
-
-# Set up interactive mode
-display.make_plot()
-setup_ui(plt.gcf(), display)
-plt.show()
+plt.ion()  # Interactive mode
+display = InteractiveDisplay(image_file=args.image)
+setup_ui(display.fig, display)
+display.run()

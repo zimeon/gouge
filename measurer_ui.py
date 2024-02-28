@@ -5,17 +5,14 @@ https://stackoverflow.com/questions/33707987/matplotlib-button-to-close-a-loop-p
 """
 
 import logging
+import sys
 
 global d
 
 def on_click(event):
     """Event handler for mouse button press."""
-    print('view=%s: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
-          (p.view, event.button, event.x, event.y, event.xdata, event.ydata))
-    if (p.view == 'sections' and event.button == 3):
-        p.select_point_width_profile(event.xdata, event.ydata)
-        p.make_plot()
-
+    print('button=%d, x=%f, y=%f, xdata=%f, ydata=%f' %
+          (event.button, event.x, event.y, event.xdata, event.ydata))
 
 def on_key(event):
     """Event handler for keypress."""
@@ -27,24 +24,28 @@ def on_key(event):
     #
     elif (event.key == 'down'):
         logging.warning("Moving center down")
-        d.bar_center_y += 1
+        d.bar_center_y += 0.02
     elif (event.key == 'up'):
         logging.warning("Moving center up")
-        d.bar_center_y -= 1
-    elif (event.key == 'e'):
-        p.view = 'end'
-        logging.warning("Setting end view")
-    elif (event.key == 'n'):
-        logging.warning("Now adjusting nose angle, 30-80 degrees")
-        number_mode = 'nose'
-        number_low, number_high = 30.0, 80.0
-    elif (event.key == 'j'):
-        number_mode = 'jig'
-        number_low, number_high = 10.0, 50.0
-        logging.warning("Now adjusting jig angle, 10-50 degrees")
+        d.bar_center_y -= 0.02
+    elif (event.key == 'left'):
+        logging.warning("Moving center left")
+        d.bar_center_x -= 0.02
+    elif (event.key == 'right'):
+        logging.warning("Moving center right")
+        d.bar_center_x += 0.02
+    elif (event.key == 'b'):
+        logging.warning("Making bar circle bigger")
+        d.bar_radius += 0.01
+    elif (event.key == 's'):
+        logging.warning("Making bar circle smaller")
+        d.bar_radius -= 0.01
+    elif (event.key == 'right'):
+        logging.warning("Moving center right")
+        d.bar_center_x += 0.02
+
     else:
         logging.warning('Untrapped keypress: ' + str(event.key))
-    d.make_plot()
 
 def setup_ui(fig, display):
     """Set-up UI by attaching event handlers to the figure."""
