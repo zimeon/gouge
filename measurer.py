@@ -12,7 +12,9 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.ticker import FuncFormatter, MultipleLocator
 import logging
+import os.path
 from PIL import Image
+import re
 import sys
 import time
 
@@ -67,7 +69,7 @@ def get_extent(fig, ax, img, xsize, xpos, ypos):
 class InteractiveDisplay(object):
     """Class to plot gouge end photo and measure on that."""
 
-    def __init__(self, image_file=None):
+    def __init__(self, image_file=None, bar_size=None):
         """Initialize Plotter object."""
         # Load image
         self.img = numpy.asarray(Image.open(image_file))
@@ -80,6 +82,7 @@ class InteractiveDisplay(object):
         self.bar_radius = 0.8
         # Set up plot
         self.fig, self.ax = plt.subplots()
+        self.set_title(image_file, bar_size)
         self.lines, = self.ax.plot([],[], 'o')
         self.ax.set_xlim(-1.0,1.0)
         self.ax.set_ylim(-1.0,1.0)
@@ -93,6 +96,25 @@ class InteractiveDisplay(object):
         self.line_x = 1.0
         # Record elements plotted so we can erase them
         self.elements = []
+
+    def set_title(self, image_file, bar_size):
+        """Set the title to the file name and the gouge size.
+
+        Args:
+            image_file (string): name of image file
+            bar_size (float or None): explicit setting of bar size
+
+        Use last element of the file name and the bar size in inches
+        if given in the filename or explicitly specified.
+        """
+        title = os.path.basename(image_file)
+        if bar_size is None:
+            m = re.search(r'''_(\d+)_(\d+)_''', image_file)
+            if m:
+                title += '   (' + m.group(1) + '/' + m.group(2) + '" bar diameter)'
+        else:
+            title += '   (%.3f" bar diameter)' % bar_size
+        self.ax.set_title(title)
 
     def erase(self):
         """Erase all elements from the plot."""
@@ -134,6 +156,8 @@ p = argparse.ArgumentParser()
 p.add_argument("-v", "--verbosity", action="count", default=0)
 p.add_argument("-i", "--image", action="store", default="flute_photos/robust_1_2_2022.jpg",
                help="File name of image to load")
+p.add_argument("-b", "--bar-size", action="store", type=float, default=None,
+               help="Specify bar diameter overriding any indication in the file name")
 args = p.parse_args()
 
 # Logging
@@ -143,6 +167,6 @@ logging.basicConfig(level=(logging.WARN if args.verbosity == 0 else (
 
 # Draw picture...
 plt.ion()  # Interactive mode
-display = InteractiveDisplay(image_file=args.image)
+display = InteractiveDisplay(image_file=args.image, bar_size=args.bar_size)
 setup_ui(display.fig, display)
 display.run()
