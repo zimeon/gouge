@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Test script for interactive manipulation with a figure based on
+# Test script for interactive manipulation with a fig based on
 # https://stackoverflow.com/questions/60877468/how-to-dynamically-update-matplotlib-plot-using-images-instead-of-markers
 #
 import logging
@@ -16,7 +16,7 @@ def get_ax_size(fig, ax):
     Returns the size of a given axis in pixels
 
     Args:
-       fig (matplotlib figure)
+       fig (matplotlib fig)
        ax (matplotlib axes)
 
     '''
@@ -27,27 +27,27 @@ def get_ax_size(fig, ax):
     return width, height
 
 
-def get_extent(fig, ax, image_name, xsize, xpos, ypos):
+def get_extent(fig, ax, img, xsize, xpos, ypos):
     '''
-    Places an image on a given axes whilst maintaining its aspect ratio
+    Calculate extent image on a given axes whilst maintaining its aspect ratio
 
     Args:
-        fig (matplotlib figure)
+        fig (matplotlib fig)
         ax (matplotlib axes)
-        image_name (string): name of image to place on axes
-        xsize(float): size of the x-dimension of object given as fraction of the axes length
-        xpos(float): x-coordinate of image given as fraction of axes
-        ypos(float): y-coordinate of image given as fraction of axes
+        img (numpy.ndarray): image data
+        xsize (float): size of the x-dimension of object given as fraction of the axes length
+        xpos (float): x-coordinate of image given as fraction of axes (0-1)
+        ypos (float): y-coordinate of image given as fraction of axes (0-1)
+
+    Returns:
+        xmin, xmax, ymin, ymax (float): min and max x & y specifyin gimage extent in axes coodinates
 
     '''
-    import matplotlib.image as image
-
-    im = image.imread(image_name)
-
+    img_aspect = img.shape[0] / img.shape[1]
     xrange=ax.get_xlim()[1]-ax.get_xlim()[0]
     yrange=ax.get_ylim()[1]-ax.get_ylim()[0]
 
-    ysize=(im.shape[0]/im.shape[1])*(xsize*get_ax_size(fig,ax)[0])/get_ax_size(fig,ax)[1]
+    ysize = xsize * img_aspect * get_ax_size(fig,ax)[0]/get_ax_size(fig,ax)[1]
 
     xsize *= xrange
     ysize *= yrange
@@ -55,7 +55,7 @@ def get_extent(fig, ax, image_name, xsize, xpos, ypos):
     xpos = (xpos*xrange) + ax.get_xlim()[0]
     ypos = (ypos*yrange) + ax.get_ylim()[0]
 
-    return (xpos,xpos+xsize,ypos,ypos+ysize)
+    return xpos, xpos+xsize, ypos, ypos+ysize
 
 def on_key(event):
     """Event handler for keypress."""
@@ -75,57 +75,62 @@ def on_key(event):
         print('Untrapped keypress: ' + str(event.key))
 
 
-class DynamicUpdate():
+class InteractiveDisplay():
 
     def __init__(self):
-        self.figure, self.ax = plt.subplots()
+        self.fig, self.ax = plt.subplots()
         self.lines, = self.ax.plot([],[], 'o')
-        self.im = []
-        self.ax.set_xlim(0,10)
-        self.ax.set_ylim(0,10)
+        self.ax.set_xlim(-1.0,1.0)
+        self.ax.set_ylim(-1.0,1.0)
         self.ax.grid()
+        self.ax.set_aspect('equal', adjustable='box')
+        self.fig.canvas.draw()  # Unless we draw something, the aspect has no effect
         # Image
-        self.x = 0.5
-        self.y = 0.5
+        self.x = 0.0
+        self.y = 0.0
         # Line
-        self.line_x = 10.0
+        self.line_x = 1.0
+        # Record elements plotted so we can erase them
+        self.elements = []
+        # Image
+        self.image_file = "flute_photos/robust_1_2_2022.jpg"
+        self.img = image.imread(self.image_file)
+
+    def erase(self):
+        """Erase all elements from the plot."""
+        for element in self.elements:
+            print("Removing", element)
+            element.remove()
+        self.elements = []
 
     def draw(self):
-        """
+        """Update the plot based on current data.
 
         Internally we rely on a global `elements` to store references
         to all objects plotted. These are then removed from the axes
         before we replot the new view.
         """
-        global elements
+        self.erase()
 
-        image_file = "flute_photos/robust_1_2_2022.jpg"
-        im = image.imread(image_file)
-
-        for element in elements:
-            print("Removing", element)
-            element.remove()
-        elements = []
-        extent=get_extent(self.figure,self.ax,image_file,0.1,self.x,self.y)
+        # And now plot current view
+        extent=get_extent(self.fig, self.ax, self.img, 1.0, self.x,self.y)
         print(extent)
-        elements.append(self.ax.imshow(im,aspect='auto',extent=extent,interpolation='none', zorder=0 ))
-        elements.append(self.ax.plot([0.0, 10.0], [self.line_x, 0.0], color="red", linewidth=1)[0])
-
-        self.figure.canvas.draw()
-        self.figure.canvas.flush_events()
+        self.elements.append(self.ax.imshow(self.img, aspect='auto', extent=extent,
+                                            interpolation='none', zorder=0))
+        self.elements.append(self.ax.plot([0.0, 1.0], [self.line_x, 0.0],
+                                          color="red", linewidth=1)[0])
+        self.ax.set_aspect('equal', adjustable='box') # Have to keep doing this!
+        self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
     def run(self):
-        import numpy as np
-        import time
-        xdata = np.arange(10)/10
-        ydata = np.zeros(10)
+        """Run the interactive display."""
         for it in range(100):
             self.draw()
             print(plt.waitforbuttonpress())
 
 
 plt.ion()
-elements=[]
-d = DynamicUpdate()
-d.figure.canvas.mpl_connect('key_press_event', on_key)
+d = InteractiveDisplay()
+d.fig.canvas.mpl_connect('key_press_event', on_key)
 d.run()
