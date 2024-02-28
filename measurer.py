@@ -44,26 +44,25 @@ def get_extent(fig, ax, img, xsize, xpos, ypos):
         ax (matplotlib axes)
         img (numpy.ndarray): image data
         xsize (float): size of the x-dimension of object given as fraction of the axes length
-        xpos (float): x-coordinate of image given as fraction of axes (0-1)
-        ypos (float): y-coordinate of image given as fraction of axes (0-1)
+        xpos (float): x-coordinate of image center in axes coordinates
+        ypos (float): y-coordinate of image center in axes coordinates
 
     Returns:
-        xmin, xmax, ymin, ymax (float): min and max x & y specifyin gimage extent in axes coodinates
+        xmin, xmax, ymin, ymax (float): min and max x & y specifying image extent in axes coodinates
 
     '''
     img_aspect = img.shape[0] / img.shape[1]
-    xrange=ax.get_xlim()[1]-ax.get_xlim()[0]
-    yrange=ax.get_ylim()[1]-ax.get_ylim()[0]
+    xrange = ax.get_xlim()[1] - ax.get_xlim()[0]
+    yrange = ax.get_ylim()[1] - ax.get_ylim()[0]
 
-    ysize = xsize * img_aspect * get_ax_size(fig,ax)[0]/get_ax_size(fig,ax)[1]
+    ysize = xsize * img_aspect * get_ax_size(fig,ax)[0] / get_ax_size(fig,ax)[1]
 
     xsize *= xrange
     ysize *= yrange
 
-    xpos = (xpos*xrange) + ax.get_xlim()[0]
-    ypos = (ypos*yrange) + ax.get_ylim()[0]
-
-    return xpos, xpos+xsize, ypos, ypos+ysize
+    xmin = xpos - xsize/2
+    ymin = ypos - ysize/2
+    return xmin, xmin + xsize, ymin, ymin + ysize
 
 
 class InteractiveDisplay(object):
@@ -74,6 +73,8 @@ class InteractiveDisplay(object):
         # Load image
         self.img = numpy.asarray(Image.open(image_file))
         self.fig = None
+        self.image_center_x = 0.0
+        self.image_center_y = 0.0
         # Bar cicle. Start with center at middle of image, diameter is 80%
         # of the image width
         (width, height, bits) = self.img.shape
@@ -89,9 +90,6 @@ class InteractiveDisplay(object):
         self.ax.grid()
         self.ax.set_aspect('equal', adjustable='box')
         self.fig.canvas.draw()
-        # Image
-        self.x = 0.0
-        self.y = 0.0
         # Line
         self.line_x = 1.0
         # Record elements plotted so we can erase them
@@ -136,7 +134,7 @@ class InteractiveDisplay(object):
             bar_circle_y.append(math.sin(angle) * self.bar_radius + self.bar_center_y)
 
         # And now plot current view
-        extent=get_extent(self.fig, self.ax, self.img, 1.0, self.x,self.y)
+        extent=get_extent(self.fig, self.ax, self.img, 1.0, self.image_center_x, self.image_center_y)
         print(extent)
         self.elements.append(self.ax.imshow(self.img, aspect='auto', extent=extent,
                                             interpolation='none', zorder=0))

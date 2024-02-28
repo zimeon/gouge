@@ -43,6 +43,12 @@ def on_key(event):
     elif (event.key == 'right'):
         logging.warning("Moving center right")
         d.bar_center_x += 0.02
+    elif (event.key == 'c'):
+        d.image_center_x -= d.bar_center_x
+        d.image_center_y -= d.bar_center_y
+        d.bar_center_x = 0.0
+        d.bar_center_y = 0.0
+        logging.warning("Set center: [%.3f, %.3f]", d.image_center_x, d.image_center_y)
 
     else:
         logging.warning('Untrapped keypress: ' + str(event.key))
