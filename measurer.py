@@ -20,6 +20,47 @@ from util import format_inches
 from measurer_ui import setup_ui
 
 
+def get_ax_size(fig, ax):
+    """Returns the size of a given axes in pixels
+
+    Args:
+       fig (matplotlib figure) - the figure to which the axes belong
+       ax (matplotlib axes) - the axes to return size for
+    """
+    bbox = ax.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    width = bbox.width * fig.dpi
+    height = bbox.height * fig.dpi
+    return width, height
+
+
+def get_extent(fig, ax, image_file, xsize, xpos, ypos):
+    """Places an image on a given axes whilst maintaining its aspect ratio
+
+    Args:
+        fig (matplotlib figure)
+        ax (matplotlib axes)
+        image_name (string): file name of image to place on axes
+        xsize(float): size of the x-dimension of object given as fraction of the axes length
+        xpos(float): x-coordinate of image given as fraction of axes
+        ypos(float): y-coordinate of image given as fraction of axes
+
+    """
+    im = numpy.asarray(Image.open(image_file))
+
+    xrange=ax.get_xlim()[1]-ax.get_xlim()[0]
+    yrange=ax.get_ylim()[1]-ax.get_ylim()[0]
+
+    ysize=(im.shape[0]/im.shape[1])*(xsize*get_ax_size(fig,ax)[0])/get_ax_size(fig,ax)[1]
+
+    xsize *= xrange
+    ysize *= yrange
+
+    xpos = (xpos*xrange) + ax.get_xlim()[0]
+    ypos = (ypos*yrange) + ax.get_ylim()[0]
+
+    return (xpos, xpos+xsize, ypos, ypos+ysize)
+
+
 class Display(object):
     """Class to plot gouge end photo and measure on that."""
 
@@ -51,6 +92,8 @@ class Display(object):
         self.fig = plt.imshow(self.img)
 
 
+
+
 p = argparse.ArgumentParser()
 p.add_argument("-v", "--verbosity", action="count", default=0)
 p.add_argument("-i", "--image", action="store", default="flute_photos/robust_1_2_2022.jpg",
@@ -63,6 +106,8 @@ logging.basicConfig(level=(logging.WARN if args.verbosity == 0 else (
                            logging.DEBUG)))
 
 # Draw picture...
+#plt.ion()  # Interactive mode
+
 #fig = plt.figure(figsize=(6, 6), layout="constrained")
 display = Display(image_file=args.image)
 
