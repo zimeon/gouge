@@ -16,6 +16,7 @@ import os.path
 from PIL import Image
 import re
 import sys
+from scipy.interpolate import CubicSpline
 import time
 
 from util import format_inches
@@ -90,8 +91,8 @@ class InteractiveDisplay(object):
         self.ax.grid()
         self.ax.set_aspect('equal', adjustable='box')
         self.fig.canvas.draw()
-        # Line
-        self.line_x = 1.0
+        # Flute line
+        self.flute_line = []
         # Record elements plotted so we can erase them
         self.elements = []
 
@@ -117,7 +118,7 @@ class InteractiveDisplay(object):
     def erase(self):
         """Erase all elements from the plot."""
         for element in self.elements:
-            print("Removing", element)
+            logging.debug("Removing", element)
             element.remove()
         self.elements = []
 
@@ -135,15 +136,38 @@ class InteractiveDisplay(object):
 
         # And now plot current view
         extent=get_extent(self.fig, self.ax, self.img, 1.0, self.image_center_x, self.image_center_y)
-        print(extent)
         self.elements.append(self.ax.imshow(self.img, aspect='auto', extent=extent,
                                             interpolation='none', zorder=0))
-        self.elements.append(self.ax.plot([0.0, 1.0], [self.line_x, 0.0],
-                                          color="red", linewidth=1)[0])
+        if len(self.flute_line) > 0:
+            flute_x, flute_y = list(zip(*self.flute_line))
+            self.elements.append(self.ax.plot(flute_x, flute_y, '-',
+                                              color="red", linewidth=1)[0])
+            self.elements.append(self.ax.plot(flute_x, flute_y, 'o',
+                                              color="red")[0])
+        if len(self.flute_line) > 1:
+            self.elements.append(self.ax.plot(*self.spline_points(), '-',
+                                              color="red", linewidth=1)[0])
         self.elements.append(self.ax.plot(bar_circle_x, bar_circle_y, color="yellow", linewidth=1)[0])
         self.ax.set_aspect('equal', adjustable='box') # Have to keep doing this!
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
+
+    def calculate_spline(self):
+        """Calculate spline curve for flute."""
+        pts = sorted(self.flute_line, key=lambda x: -x[0])
+        # Mirror data
+        xs = []
+        ys = []
+        for x, y in reversed(pts):
+            xs.append(-x)
+            ys.append(y)
+        for x, y in pts:
+            xs.append(x)
+            ys.append(y)
+        self.flute_spline = CubicSpline(xs,ys)
+
+    def spline_points(self):
+        self.calculate_spline()
 
     def run(self):
         for it in range(100):

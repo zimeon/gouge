@@ -11,8 +11,10 @@ global d
 
 def on_click(event):
     """Event handler for mouse button press."""
-    print('button=%d, x=%f, y=%f, xdata=%f, ydata=%f' %
-          (event.button, event.x, event.y, event.xdata, event.ydata))
+    print('button=%d, xdata=%f, ydata=%f' %
+          (event.button, event.xdata, event.ydata))
+    if event.button == 1:
+        d.flute_line.append([event.xdata, event.ydata])
 
 def on_key(event):
     """Event handler for keypress."""
@@ -49,6 +51,11 @@ def on_key(event):
         d.bar_center_x = 0.0
         d.bar_center_y = 0.0
         logging.warning("Set center: [%.3f, %.3f]", d.image_center_x, d.image_center_y)
+    #
+    ### Controls for flute line
+    #
+    elif event.key == 'z':
+        d.flute_line = []
 
     else:
         logging.warning('Untrapped keypress: ' + str(event.key))
