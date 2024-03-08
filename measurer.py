@@ -154,20 +154,38 @@ class InteractiveDisplay(object):
 
     def calculate_spline(self):
         """Calculate spline curve for flute."""
-        pts = sorted(self.flute_line, key=lambda x: -x[0])
-        # Mirror data
+        pts = []
+        # Add mirror data
+        for x, y in self.flute_line:
+            pts.append([x, y])
+            pts.append([-x, y])
         xs = []
         ys = []
-        for x, y in reversed(pts):
-            xs.append(-x)
-            ys.append(y)
-        for x, y in pts:
+        for x, y in sorted(pts, key=lambda x: x[0]):
+            print(x)
             xs.append(x)
             ys.append(y)
-        self.flute_spline = CubicSpline(xs,ys)
+        self.flute_spline_max_x = numpy.max(xs)
+        self.flute_spline = CubicSpline(xs, ys, extrapolate=True)
 
     def spline_points(self):
+        """Calculate spline curve and return points for line to plot.
+
+        """
         self.calculate_spline()
+        # How far out do we need to go to get outside of bar?
+        x = self.flute_spline_max_x
+        y = self.flute_spline(x)
+        while (x * x + y * y) < (self.bar_radius * self.bar_radius):
+            x += self.bar_radius / 10.0
+            y = self.flute_spline(x)
+        # x is now outside of bar
+        xs = []
+        ys = []
+        for xx in numpy.linspace(-x, x, 50):
+            xs.append(xx)
+            ys.append(self.flute_spline(xx))
+        return xs, ys
 
     def run(self):
         for it in range(100):
